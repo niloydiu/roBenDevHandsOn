@@ -1,0 +1,222 @@
+[
+  {
+    "title": "Beach Cleanup Day",
+    "description": "Join us for a day of cleaning up the shoreline. Help protect marine life and keep our beaches beautiful!",
+    "category": "Environment",
+    "date": "2025-04-05",
+    "startTime": "09:00",
+    "endTime": "12:00",
+    "location": "Main City Beach",
+    "maxParticipants": 30,
+    "requirements": "Bring gloves and water. Trash bags will be provided."
+  },
+  {
+    "title": "Food Bank Sorting Volunteer Day",
+    "description": "Help sort and organize food donations at the local food bank to support families in need.",
+    "category": "Food & Hunger",
+    "date": "2025-03-28",
+    "startTime": "13:00",
+    "endTime": "16:00",
+    "location": "Community Food Bank, 123 Main St",
+    "maxParticipants": 20,
+    "requirements": "Must be able to stand for extended periods and lift up to 20 pounds."
+  },
+  {
+    "title": "After-School Math Tutoring",
+    "description": "Volunteer to help elementary school students with math homework and concepts.",
+    "category": "Education",
+    "date": "2025-04-01",
+    "startTime": "15:30",
+    "endTime": "17:00",
+    "location": "Lincoln Elementary School",
+    "maxParticipants": 10,
+    "requirements": "Experience with elementary math education preferred."
+  },
+  {
+    "title": "Senior Center Game Day",
+    "description": "Spend time with seniors playing board games and card games. Brighten someone's day!",
+    "category": "Elderly Support",
+    "date": "2025-03-30",
+    "startTime": "14:00",
+    "endTime": "16:30",
+    "location": "Golden Years Senior Center",
+    "maxParticipants": 15,
+    "requirements": "Patience and a friendly attitude required."
+  },
+  {
+    "title": "Animal Shelter Dog Walking",
+    "description": "Help exercise shelter dogs by taking them for walks and providing companionship.",
+    "category": "Animal Welfare",
+    "date": "2025-04-06",
+    "startTime": "10:00",
+    "endTime": "13:00",
+    "location": "Happy Paws Animal Shelter",
+    "maxParticipants": 12,
+    "requirements": "Comfortable with handling dogs of various sizes and temperaments."
+  },
+  {
+    "title": "Spring Community Garden Planting",
+    "description": "Help plant seedlings and prepare beds for the spring growing season in our community garden.",
+    "category": "Environment",
+    "date": "2025-04-12",
+    "startTime": "10:00",
+    "endTime": "14:00",
+    "location": "Greenway Community Garden",
+    "maxParticipants": 25,
+    "requirements": "Bring gardening gloves and sun protection. Tools provided."
+  },
+  {
+    "title": "Homeless Shelter Dinner Service",
+    "description": "Prepare and serve dinner to residents at the local homeless shelter.",
+    "category": "Food & Hunger",
+    "date": "2025-03-29",
+    "startTime": "16:30",
+    "endTime": "19:30",
+    "location": "Hope House Shelter",
+    "maxParticipants": 8,
+    "requirements": "Food handler's certificate preferred but not required."
+  },
+  {
+    "title": "Spring Community Health Fair",
+    "description": "Volunteer at booths providing health information and basic health checks to community members.",
+    "category": "Healthcare",
+    "date": "2025-04-15",
+    "startTime": "09:00",
+    "endTime": "15:00",
+    "location": "Downtown Community Center",
+    "maxParticipants": 40,
+    "requirements": "Healthcare background helpful but not necessary for all positions."
+  },
+  {
+    "title": "City Park Restoration Project",
+    "description": "Help restore our city park by planting native trees and shrubs to improve habitat for local wildlife.",
+    "category": "Environment",
+    "date": "2025-04-19",
+    "startTime": "08:30",
+    "endTime": "12:30",
+    "location": "Oakridge City Park",
+    "maxParticipants": 35,
+    "requirements": "Bring work gloves and wear sturdy shoes. Tools and plants provided."
+  },
+  {
+    "title": "Children's Library Reading Hour",
+    "description": "Read stories to children ages 4-8 at the public library's weekly reading hour.",
+    "category": "Education",
+    "date": "2025-04-05",
+    "startTime": "10:30",
+    "endTime": "11:30",
+    "location": "Main Public Library, Children's Section",
+    "maxParticipants": 5,
+    "requirements": "Enthusiasm for children's literature and comfort speaking in front of small groups."
+  },
+  {
+    "title": "Community Disaster Preparedness Workshop",
+    "description": "Help facilitate a workshop teaching community members how to prepare for natural disasters.",
+    "category": "Disaster Relief",
+    "date": "2025-04-20",
+    "startTime": "13:00",
+    "endTime": "16:00",
+    "location": "Fire Station #3 Community Room",
+    "maxParticipants": 15,
+    "requirements": "Previous disaster response or emergency training helpful but not required."
+  },
+  {
+    "title": "Community Blood Drive Assistant",
+    "description": "Support the Red Cross team by registering donors and providing post-donation refreshments.",
+    "category": "Healthcare",
+    "date": "2025-04-08",
+    "startTime": "10:00",
+    "endTime": "15:00",
+    "location": "Westside Mall Community Room",
+    "maxParticipants": 10,
+    "requirements": "Friendly demeanor and ability to follow health protocols."
+  },
+  {
+    "title": "Habitat for Humanity Home Build",
+    "description": "Help build affordable housing for families in need. All skill levels welcome!",
+    "category": "Community Development",
+    "date": "2025-04-25",
+    "startTime": "08:00",
+    "endTime": "16:00",
+    "location": "523 Elm Street Construction Site",
+    "maxParticipants": 20,
+    "requirements": "Closed-toe shoes required. Training provided on site."
+  },
+  {
+    "title": "Youth Soccer Volunteer Coach",
+    "description": "Coach children ages 6-8 in basic soccer skills for the spring recreation league.",
+    "category": "Education",
+    "date": "2025-04-05",
+    "startTime": "13:00",
+    "endTime": "15:00",
+    "location": "Riverside Sports Complex",
+    "maxParticipants": 6,
+    "requirements": "Basic understanding of soccer and enthusiasm for working with children."
+  },
+  {
+    "title": "River Cleanup Kayak Expedition",
+    "description": "Paddle the river in kayaks to collect trash from hard-to-reach areas of our waterway.",
+    "category": "Environment",
+    "date": "2025-04-26",
+    "startTime": "09:00",
+    "endTime": "13:00",
+    "location": "River Access Point at Willow Park",
+    "maxParticipants": 15,
+    "requirements": "Must be comfortable in a kayak. Kayaks provided, but bring water shoes and sun protection."
+  },
+  {
+    "title": "Senior Tech Support Workshop",
+    "description": "Help senior citizens learn to use smartphones, tablets, and computers.",
+    "category": "Elderly Support",
+    "date": "2025-04-10",
+    "startTime": "10:00",
+    "endTime": "12:00",
+    "location": "Community Center, Room 204",
+    "maxParticipants": 12,
+    "requirements": "Patience and basic knowledge of common devices and applications."
+  },
+  {
+    "title": "Animal Shelter Fundraising Bake Sale",
+    "description": "Staff a bake sale table to raise funds for the local animal shelter's new medical equipment.",
+    "category": "Animal Welfare",
+    "date": "2025-04-11",
+    "startTime": "10:00",
+    "endTime": "15:00",
+    "location": "Downtown Plaza",
+    "maxParticipants": 10,
+    "requirements": "Friendly attitude and basic math skills for handling sales."
+  },
+  {
+    "title": "Winter Clothing Drive Sorting",
+    "description": "Sort and organize donated winter clothing for distribution to homeless shelters.",
+    "category": "Community Development",
+    "date": "2025-04-22",
+    "startTime": "13:00",
+    "endTime": "17:00",
+    "location": "United Community Church Basement",
+    "maxParticipants": 15,
+    "requirements": "Ability to stand for 2+ hours and sort items by size/type."
+  },
+  {
+    "title": "Children's Hospital Visitor Program",
+    "description": "Bring cheer to children in long-term hospital care through games and activities.",
+    "category": "Healthcare",
+    "date": "2025-04-17",
+    "startTime": "14:00",
+    "endTime": "16:00",
+    "location": "City Children's Hospital, 5th Floor",
+    "maxParticipants": 8,
+    "requirements": "Background check required. Creative and positive attitude essential."
+  },
+  {
+    "title": "Downtown Community Mural Painting",
+    "description": "Help paint a community mural designed by local artists to beautify the downtown area.",
+    "category": "Community Development",
+    "date": "2025-04-27",
+    "startTime": "11:00",
+    "endTime": "17:00",
+    "location": "Main Street Alleyway between 4th and 5th",
+    "maxParticipants": 25,
+    "requirements": "No artistic experience necessary! Wear clothes that can get paint on them."
+  }
+]
