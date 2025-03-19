@@ -176,15 +176,35 @@ const Navbar = () => {
                 Community Help
               </Link>
               {token && (
-                <Link
-                  to="/teams"
-                  className={`text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
-                    isActive("/teams") ? "text-blue-500 font-bold" : ""
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Teams
-                </Link>
+                <>
+                  <Link
+                    to="/teams"
+                    className={`text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
+                      isActive("/teams") ? "text-blue-500 font-bold" : ""
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Teams
+                  </Link>
+                  <Link
+                    to="/profile"
+                    className={`text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
+                      isActive("/profile") ? "text-blue-500 font-bold" : ""
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Profile
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsMenuOpen(false);
+                    }}
+                    className="text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 text-left"
+                  >
+                    Logout
+                  </button>
+                </>
               )}
             </div>
           </div>
