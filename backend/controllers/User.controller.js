@@ -97,7 +97,7 @@ const userProfile = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
-    const { name, email } = req.body;
+    const { name, email, skills, causes } = req.body;
 
     if (!name || !email) {
       return res
@@ -105,11 +105,23 @@ const updateUser = async (req, res) => {
         .json({ success: false, message: "Name and email are required" });
     }
 
+    // Use req.user.id instead of req.body.userId
     const updatedUser = await User.findByIdAndUpdate(
-      req.body.userId,
-      { name, email },
+      req.user.id, // This was the issue - using authenticated user ID
+      {
+        name,
+        email,
+        skills, // Include skills array
+        causes, // Include causes array
+      },
       { new: true, runValidators: true }
     ).select("-password");
+
+    if (!updatedUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
 
     res.status(200).json({ success: true, user: updatedUser });
   } catch (error) {
