@@ -204,9 +204,8 @@ const AppcontextProvider = ({ children }) => {
 
       // If successful
       if (data.success) {
-        // Add new request to the beginning of our help requests array
-        const updatedHelpRequests = [data.helpRequest, ...helpRequests];
-        setHelpRequests(updatedHelpRequests);
+        // Fetch all help requests to ensure data is fresh
+        await fetchAllHelpRequests();
 
         // Return success
         return { success: true, message: "Help request created successfully!" };
@@ -247,24 +246,16 @@ const AppcontextProvider = ({ children }) => {
 
       // If successful
       if (data.success) {
-        // Update the help requests list with the updated request
-        // We need to go through each request and replace the one that changed
-        const newHelpRequests = [];
-        for (let i = 0; i < helpRequests.length; i++) {
-          if (helpRequests[i]._id === requestId) {
-            // Replace with updated request
-            newHelpRequests.push(data.helpRequest);
-          } else {
-            // Keep the original request
-            newHelpRequests.push(helpRequests[i]);
-          }
-        }
-        setHelpRequests(newHelpRequests);
-
-        // Update the userHelpOffers state so we know if user has offered help
+        // Update the userHelpOffers state immediately for UI feedback
         const newUserHelpOffers = { ...userHelpOffers };
         newUserHelpOffers[requestId] = data.hasOffered;
         setUserHelpOffers(newUserHelpOffers);
+
+        // Then fetch fresh data from the server to ensure consistency
+        await fetchAllHelpRequests();
+
+        // Also refresh user profile data since help stats may have changed
+        await loadUserProfileData();
 
         // Return success
         return {
@@ -294,11 +285,7 @@ const AppcontextProvider = ({ children }) => {
   // Function to check if user has offered help for a specific request
   const hasUserOfferedHelp = (requestId) => {
     // If userHelpOffers[requestId] is true, return true, otherwise return false
-    if (userHelpOffers[requestId]) {
-      return true;
-    } else {
-      return false;
-    }
+    return !!userHelpOffers[requestId];
   };
 
   // Function to delete a help request
@@ -318,15 +305,11 @@ const AppcontextProvider = ({ children }) => {
 
       // If successful
       if (data.success) {
-        // Remove the deleted request from our state
-        // We'll keep all requests except the one that matches the ID
-        const newHelpRequests = [];
-        for (let i = 0; i < helpRequests.length; i++) {
-          if (helpRequests[i]._id !== requestId) {
-            newHelpRequests.push(helpRequests[i]);
-          }
-        }
-        setHelpRequests(newHelpRequests);
+        // Fetch all help requests to ensure data is fresh
+        await fetchAllHelpRequests();
+
+        // Also refresh user profile data since help stats may have changed
+        await loadUserProfileData();
 
         // Return success
         return {
@@ -397,6 +380,92 @@ const AppcontextProvider = ({ children }) => {
     setUserData(null);
   };
 
+  // Function to join an event
+  const joinEvent = async (eventId) => {
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/event/join/${eventId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        // Refresh events and user data
+        await fetchAllEvents();
+        await loadUserProfileData();
+        return {
+          success: true,
+          message: "Successfully joined the event",
+        };
+      } else {
+        return {
+          success: false,
+          message: response.data.message || "Failed to join event",
+        };
+      }
+    } catch (error) {
+      console.error("Error joining event:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Error joining event",
+      };
+    }
+  };
+
+  // Function to leave an event
+  const leaveEvent = async (eventId) => {
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/event/leave/${eventId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        // Refresh events and user data
+        await fetchAllEvents();
+        await loadUserProfileData();
+        return {
+          success: true,
+          message: "Successfully left the event",
+        };
+      } else {
+        return {
+          success: false,
+          message: response.data.message || "Failed to leave event",
+        };
+      }
+    } catch (error) {
+      console.error("Error leaving event:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Error leaving event",
+      };
+    }
+  };
+
+  // Set up periodic refresh for data
+  useEffect(() => {
+    if (isLoggedIn) {
+      // Refresh data every 60 seconds if user is logged in
+      const interval = setInterval(() => {
+        fetchAllEvents();
+        fetchAllHelpRequests();
+        loadUserProfileData();
+      }, 60000);
+
+      return () => clearInterval(interval);
+    }
+  }, [isLoggedIn]);
+
   // This useEffect runs when the component mounts or when token changes
   useEffect(() => {
     // Load user data if we have a token
@@ -423,6 +492,8 @@ const AppcontextProvider = ({ children }) => {
     error, // Error message
     login, // Function to log in
     logout, // Function to log out
+    joinEvent, // Function to join an event
+    leaveEvent, // Function to leave an event
 
     // Help request related values
     helpRequests, // Array of help requests

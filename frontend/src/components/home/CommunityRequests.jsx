@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Appcontext } from "../../context/Appcontext";
 
@@ -12,7 +12,25 @@ const CommunityRequests = () => {
     userData,
     deleteHelpRequest,
     hasUserOfferedHelp,
+    fetchAllHelpRequests,
   } = useContext(Appcontext);
+
+  // Add state to track when operations are in progress
+  const [processingRequest, setProcessingRequest] = useState(null);
+  const [lastUpdate, setLastUpdate] = useState(Date.now());
+
+  // Add effect to refresh data periodically or after operations
+  useEffect(() => {
+    // Initial fetch on component mount
+    fetchAllHelpRequests();
+
+    // Refresh data every 30 seconds
+    const interval = setInterval(() => {
+      fetchAllHelpRequests();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [lastUpdate]);
 
   // Get urgency level badge class
   const getUrgencyBadgeClass = (level) => {
@@ -40,15 +58,49 @@ const CommunityRequests = () => {
       return;
     }
 
-    const result = await offerHelp(requestId);
-    alert(result.message);
+    try {
+      // Show processing state
+      setProcessingRequest(requestId);
+
+      // Call the API
+      const result = await offerHelp(requestId);
+
+      // Show result
+      alert(result.message);
+
+      // Trigger a refresh of data by updating lastUpdate
+      setLastUpdate(Date.now());
+    } catch (error) {
+      console.error("Error offering help:", error);
+      alert("Failed to process your request. Please try again.");
+    } finally {
+      // Clear processing state
+      setProcessingRequest(null);
+    }
   };
 
   // Handle delete help request button click
   const handleDeleteHelpRequest = async (requestId) => {
     if (confirm("Are you sure you want to delete this help request?")) {
-      const result = await deleteHelpRequest(requestId);
-      alert(result.message);
+      try {
+        // Show processing state
+        setProcessingRequest(requestId);
+
+        // Call the API
+        const result = await deleteHelpRequest(requestId);
+
+        // Show result
+        alert(result.message);
+
+        // Trigger a refresh of data
+        setLastUpdate(Date.now());
+      } catch (error) {
+        console.error("Error deleting help request:", error);
+        alert("Failed to delete the help request. Please try again.");
+      } finally {
+        // Clear processing state
+        setProcessingRequest(null);
+      }
     }
   };
 
@@ -59,7 +111,8 @@ const CommunityRequests = () => {
     <div className="space-y-6">
       {loadingHelpRequests ? (
         <div className="text-center py-8">
-          <p>Loading requests...</p>
+          <div className="animate-spin inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
+          <p className="inline-block">Loading requests...</p>
         </div>
       ) : displayRequests.length === 0 ? (
         <div className="text-center py-8 bg-gray-100 rounded-lg">
@@ -149,20 +202,30 @@ const CommunityRequests = () => {
               {isUserRequest(request) ? (
                 <button
                   onClick={() => handleDeleteHelpRequest(request._id)}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm"
+                  disabled={processingRequest === request._id}
+                  className={`bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm ${
+                    processingRequest === request._id ? "opacity-70" : ""
+                  }`}
                 >
-                  Delete Request
+                  {processingRequest === request._id
+                    ? "Processing..."
+                    : "Delete Request"}
                 </button>
               ) : (
                 <button
                   onClick={() => handleOfferHelpClick(request._id)}
+                  disabled={processingRequest === request._id}
                   className={`${
                     hasUserOfferedHelp(request._id)
                       ? "bg-orange-500 hover:bg-orange-600"
                       : "bg-green-600 hover:bg-green-700"
-                  } text-white px-4 py-2 rounded-md text-sm`}
+                  } text-white px-4 py-2 rounded-md text-sm ${
+                    processingRequest === request._id ? "opacity-70" : ""
+                  }`}
                 >
-                  {isLoggedIn
+                  {processingRequest === request._id
+                    ? "Processing..."
+                    : isLoggedIn
                     ? hasUserOfferedHelp(request._id)
                       ? "Withdraw Offer"
                       : "Offer Help"

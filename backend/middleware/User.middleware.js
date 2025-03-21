@@ -4,8 +4,6 @@ import User from "../models/User.model.js";
 // this function checks if user is logged in
 const authUser = async (req, res, next) => {
   try {
-    console.log("Checking if user is logged in...");
-
     // get the auth header from the request
     const authHeader = req.headers.authorization;
     console.log("Auth header:", authHeader ? "exists" : "missing");
