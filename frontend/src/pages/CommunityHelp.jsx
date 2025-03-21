@@ -13,10 +13,13 @@ function CommunityHelp() {
     userData,
     deleteHelpRequest,
     hasUserOfferedHelp,
-    fetchAllHelpRequests, // Add this to ensure we can fetch help requests
+    fetchAllHelpRequests,
   } = useContext(Appcontext);
 
   const [filteredRequests, setFilteredRequests] = useState([]);
+  // Add state to track processing requests
+  const [processingRequest, setProcessingRequest] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [newRequest, setNewRequest] = useState({
     title: "",
@@ -33,11 +36,11 @@ function CommunityHelp() {
     showMyRequests: false, // New filter for user's own requests
   });
 
-  // Fetch help requests when component mounts
+  // Fetch help requests when component mounts or refreshTrigger changes
   useEffect(() => {
-    console.log("Fetching help requests on mount");
+    console.log("Fetching help requests on mount or refresh trigger change");
     fetchAllHelpRequests();
-  }, []); // Empty dependency array means this runs once when component mounts
+  }, [refreshTrigger]); // Refresh when trigger changes
 
   // Update filtered requests whenever help requests change
   useEffect(() => {
@@ -67,22 +70,29 @@ function CommunityHelp() {
       return;
     }
 
-    const result = await createHelpRequest(newRequest);
+    try {
+      const result = await createHelpRequest(newRequest);
 
-    if (result.success) {
-      // Reset the form
-      setNewRequest({
-        title: "",
-        description: "",
-        location: "",
-        urgencyLevel: "medium",
-        category: "general",
-        contactInfo: "",
-      });
+      if (result.success) {
+        // Reset the form
+        setNewRequest({
+          title: "",
+          description: "",
+          location: "",
+          urgencyLevel: "medium",
+          category: "general",
+          contactInfo: "",
+        });
 
-      alert(result.message);
-    } else {
-      alert(result.message);
+        alert(result.message);
+        // Force refresh
+        setRefreshTrigger((prev) => prev + 1);
+      } else {
+        alert(result.message);
+      }
+    } catch (error) {
+      console.error("Error creating help request:", error);
+      alert("Failed to create help request. Please try again.");
     }
   };
 
@@ -93,15 +103,37 @@ function CommunityHelp() {
       return;
     }
 
-    const result = await offerHelp(requestId);
-    alert(result.message);
+    try {
+      setProcessingRequest(requestId);
+      const result = await offerHelp(requestId);
+      alert(result.message);
+
+      // Force refresh after operation completes
+      setRefreshTrigger((prev) => prev + 1);
+    } catch (error) {
+      console.error("Error with help offer:", error);
+      alert("Failed to process your request. Please try again.");
+    } finally {
+      setProcessingRequest(null);
+    }
   };
 
   // Function to handle deleting a help request
   const handleDeleteHelpRequest = async (requestId) => {
     if (confirm("Are you sure you want to delete this help request?")) {
-      const result = await deleteHelpRequest(requestId);
-      alert(result.message);
+      try {
+        setProcessingRequest(requestId);
+        const result = await deleteHelpRequest(requestId);
+        alert(result.message);
+
+        // Force refresh after deletion
+        setRefreshTrigger((prev) => prev + 1);
+      } catch (error) {
+        console.error("Error deleting help request:", error);
+        alert("Failed to delete the help request. Please try again.");
+      } finally {
+        setProcessingRequest(null);
+      }
     }
   };
 
@@ -376,7 +408,10 @@ function CommunityHelp() {
 
       {/* Debug button to manually refresh help requests */}
       <button
-        onClick={fetchAllHelpRequests}
+        onClick={() => {
+          fetchAllHelpRequests();
+          setRefreshTrigger((prev) => prev + 1);
+        }}
         className="mb-4 bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded-md text-sm"
       >
         🔄 Refresh Help Requests
@@ -387,7 +422,8 @@ function CommunityHelp() {
         <h2 className="text-2xl font-semibold">Current Help Requests</h2>
         {loadingHelpRequests ? (
           <div className="text-center py-8">
-            <p>Loading requests...</p>
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-2">Loading requests...</p>
           </div>
         ) : !helpRequests || helpRequests.length === 0 ? (
           <div className="text-center py-8 bg-gray-100 rounded-lg">
@@ -448,20 +484,34 @@ function CommunityHelp() {
                 {isUserRequest(request) ? (
                   <button
                     onClick={() => handleDeleteHelpRequest(request._id)}
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm"
+                    disabled={processingRequest === request._id}
+                    className={`bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm ${
+                      processingRequest === request._id
+                        ? "opacity-70 cursor-not-allowed"
+                        : ""
+                    }`}
                   >
-                    Delete Request
+                    {processingRequest === request._id
+                      ? "Processing..."
+                      : "Delete Request"}
                   </button>
                 ) : (
                   <button
                     onClick={() => handleOfferHelpClick(request._id)}
+                    disabled={processingRequest === request._id}
                     className={`${
                       hasUserOfferedHelp(request._id)
                         ? "bg-orange-500 hover:bg-orange-600"
                         : "bg-green-600 hover:bg-green-700"
-                    } text-white px-4 py-2 rounded-md text-sm`}
+                    } text-white px-4 py-2 rounded-md text-sm ${
+                      processingRequest === request._id
+                        ? "opacity-70 cursor-not-allowed"
+                        : ""
+                    }`}
                   >
-                    {isLoggedIn
+                    {processingRequest === request._id
+                      ? "Processing..."
+                      : isLoggedIn
                       ? hasUserOfferedHelp(request._id)
                         ? "Withdraw Offer"
                         : "Offer Help"

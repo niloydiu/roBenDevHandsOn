@@ -128,15 +128,13 @@ export const getHelpById = async (req, res) => {
   }
 };
 
-// offer help for a request
+// offer or withdraw help for a request - UPDATED
 export const offerHelp = async (req, res) => {
   try {
-    // get ids
-    const requestId = req.params.requestId;
+    // get ids - support both 'id' and 'requestId' in URL parameters
+    const requestId = req.params.id || req.params.requestId;
     const userId = req.user.id;
-    console.log(
-      "User " + userId + " is offering help for request " + requestId
-    );
+    console.log(`User ${userId} is toggling help for request ${requestId}`);
 
     // find the request
     const helpRequest = await Help.findById(requestId);
@@ -151,58 +149,85 @@ export const offerHelp = async (req, res) => {
     }
 
     // check if user already offered help
-    let alreadyOffered = false;
+    let hasOffered = false;
+    let helperIndex = -1;
+
     for (let i = 0; i < helpRequest.helpers.length; i++) {
       if (helpRequest.helpers[i].toString() === userId.toString()) {
-        alreadyOffered = true;
+        hasOffered = true;
+        helperIndex = i;
         break;
       }
     }
 
-    if (alreadyOffered) {
-      console.log("User already offered help");
-      return res.status(400).json({
-        success: false,
-        message: "You have already offered help for this request",
+    // Toggle the help offer status
+    if (hasOffered) {
+      // WITHDRAW HELP: Remove user from helpers array
+      console.log(`User ${userId} is withdrawing help`);
+      helpRequest.helpers.splice(helperIndex, 1);
+
+      // update offers count
+      helpRequest.offers = helpRequest.helpers.length;
+      await helpRequest.save();
+      console.log(
+        `User removed from helpers list. Now has ${helpRequest.offers} offers`
+      );
+
+      // decrease user's help offered count
+      await User.findByIdAndUpdate(
+        userId,
+        { $inc: { helpOffered: -1 } }, // decrease by 1
+        { new: true }
+      );
+      console.log("Updated user's helpOffered count (decreased)");
+
+      // return success
+      return res.status(200).json({
+        success: true,
+        message: "Help withdrawn successfully",
+        helpRequest: helpRequest,
+        hasOffered: false,
+      });
+    } else {
+      // OFFER HELP: Add user to helpers
+      console.log(`User ${userId} is offering help`);
+      helpRequest.helpers.push(userId);
+
+      // update offers count
+      helpRequest.offers = helpRequest.helpers.length;
+      await helpRequest.save();
+      console.log(
+        `User added to helpers list. Now has ${helpRequest.offers} offers`
+      );
+
+      // increase user's help offered count
+      await User.findByIdAndUpdate(
+        userId,
+        { $inc: { helpOffered: 1 } }, // increase by 1
+        { new: true }
+      );
+      console.log("Updated user's helpOffered count (increased)");
+
+      // return success
+      return res.status(200).json({
+        success: true,
+        message: "Help offered successfully",
+        helpRequest: helpRequest,
+        hasOffered: true,
       });
     }
-
-    // add user to helpers
-    helpRequest.helpers.push(userId);
-
-    // update offers count
-    helpRequest.offers = helpRequest.helpers.length;
-    await helpRequest.save();
-    console.log("User added to helpers list");
-    console.log("Request now has " + helpRequest.offers + " offers");
-
-    // increase user's help offered count
-    await User.findByIdAndUpdate(
-      userId,
-      { $inc: { helpOffered: 1 } }, // increase by 1
-      { new: true }
-    );
-    console.log("Updated user's helpOffered count");
-
-    // return success
-    res.status(200).json({
-      success: true,
-      message: "Help offered successfully",
-      helpRequest: helpRequest,
-      hasOffered: true,
-    });
   } catch (error) {
     console.log("ERROR in offerHelp:");
     console.log(error);
     res.status(500).json({
       success: false,
-      message: "Error offering help",
+      message: "Error processing help request",
       error: error.message,
     });
   }
 };
 
-// withdraw an offer of help
+// withdraw an offer of help - kept for compatibility
 export const withdrawHelp = async (req, res) => {
   try {
     // get ids
@@ -226,9 +251,12 @@ export const withdrawHelp = async (req, res) => {
 
     // check if user has offered help
     let hasOffered = false;
+    let helperIndex = -1;
+
     for (let i = 0; i < helpRequest.helpers.length; i++) {
       if (helpRequest.helpers[i].toString() === userId.toString()) {
         hasOffered = true;
+        helperIndex = i;
         break;
       }
     }
@@ -242,9 +270,7 @@ export const withdrawHelp = async (req, res) => {
     }
 
     // remove user from helpers
-    helpRequest.helpers = helpRequest.helpers.filter(
-      (helper) => helper.toString() !== userId.toString()
-    );
+    helpRequest.helpers.splice(helperIndex, 1);
 
     // update offers count
     helpRequest.offers = helpRequest.helpers.length;
