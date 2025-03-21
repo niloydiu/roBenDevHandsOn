@@ -1,5 +1,12 @@
+import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
-import { FaClock, FaMedal, FaSpinner, FaUsers } from "react-icons/fa";
+import {
+  FaCalendarAlt,
+  FaClock,
+  FaMedal,
+  FaSpinner,
+  FaUsers,
+} from "react-icons/fa";
 import { Appcontext } from "../context/Appcontext";
 
 const Profile = () => {
@@ -17,6 +24,7 @@ const Profile = () => {
     helpRequested: 0,
     helpOffered: 0,
     teams: [],
+    events: [], // Added to store event data
   });
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -32,78 +40,129 @@ const Profile = () => {
     }
   }, [token]);
 
+  // Set up a periodic refresh to keep data in sync
+  useEffect(() => {
+    if (!token) return;
+
+    // Refresh every 30 seconds silently
+    const interval = setInterval(() => {
+      fetchUserData(true); // silent refresh
+    }, 30000);
+
+    return () => clearInterval(interval); // Clean up on unmount
+  }, [token]);
+
   // Update profileData when userData changes
   useEffect(() => {
     if (userData) {
-      setProfileData({
-        name: userData.name || "",
-        email: userData.email || "",
-        skills: userData.skills || [],
-        causes: userData.causes || [],
-        teamsCreated: userData.teamsCreated || 0,
-        teamsJoined: userData.teams?.length || 0,
-        eventsCreated: userData.eventsCreated || 0,
-        eventsJoined: userData.eventsJoined?.length || 0,
-        helpRequested: userData.helpRequested || 0,
-        helpOffered: userData.helpOffered || 0,
-        volunteerHours: userData.volunteerHours || 0,
-        points: userData.points || 0,
-        teams: userData.teams || [],
-      });
+      updateProfileFromUserData(userData);
       setLoading(false);
     }
   }, [userData]);
 
+  // Helper function to update profile data from user data
+  const updateProfileFromUserData = (data) => {
+    // Handle events data which might be array of objects or array of IDs
+    let eventsData = data.eventsJoined || [];
+
+    // Make sure eventsJoined is an array
+    if (!Array.isArray(eventsData)) {
+      eventsData = [];
+    }
+
+    setProfileData({
+      name: data.name || "",
+      email: data.email || "",
+      skills: data.skills || [],
+      causes: data.causes || [],
+      teamsCreated: data.teamsCreated || 0,
+      teamsJoined: data.teams?.length || 0,
+      eventsCreated: data.eventsCreated || 0,
+      eventsJoined: eventsData.length || 0,
+      helpRequested: data.helpRequested || 0,
+      helpOffered: data.helpOffered || 0,
+      volunteerHours: data.volunteerHours || 0,
+      points: data.points || 0,
+      teams: data.teams || [],
+      events: eventsData,
+    });
+  };
+
   // Function to fetch user data
-  const fetchUserData = async () => {
-    setLoading(true);
-    setRefreshing(true);
+  const fetchUserData = async (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+      setRefreshing(true);
+    }
+
     try {
-      const response = await fetch(`${backendUrl}/api/user/profile`, {
+      // Use axios instead of fetch for consistency
+      const response = await axios.get(`${backendUrl}/api/user/profile`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch user data");
-      }
-
-      const data = await response.json();
-      console.log("User data from API:", data.user); // Debug log
+      const data = response.data;
 
       if (data.success && data.user) {
-        // Process team data
-        const teams = data.user.teams || [];
+        console.log("User profile data:", data.user);
 
-        setProfileData({
-          name: data.user.name || "",
-          email: data.user.email || "",
-          skills: data.user.skills || [],
-          causes: data.user.causes || [],
-          teamsCreated: data.user.teamsCreated || 0,
-          teamsJoined: teams.length || 0,
-          eventsCreated: data.user.eventsCreated || 0,
-          eventsJoined: data.user.eventsJoined?.length || 0,
-          helpRequested: data.user.helpRequested || 0,
-          helpOffered: data.user.helpOffered || 0,
-          volunteerHours: data.user.volunteerHours || 0,
-          points: data.user.points || 0,
-          teams: teams,
-        });
+        // Also fetch event details if user has joined events
+        // This helps get more details like title and date
+        if (data.user.eventsJoined && data.user.eventsJoined.length > 0) {
+          try {
+            // Fetch all events and filter for the ones the user joined
+            const eventsResponse = await axios.get(`${backendUrl}/api/event`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            if (
+              eventsResponse.data &&
+              eventsResponse.data.success &&
+              Array.isArray(eventsResponse.data.events)
+            ) {
+              // Filter events to only include ones the user joined
+              const joinedEventIds = data.user.eventsJoined.map((event) =>
+                typeof event === "object" ? event._id : event
+              );
+
+              // Enhance user data with full event details
+              const userJoinedEvents = eventsResponse.data.events.filter(
+                (event) => joinedEventIds.includes(event._id)
+              );
+
+              // Add full event data to user data
+              data.user.eventsJoinedDetails = userJoinedEvents;
+            }
+          } catch (err) {
+            console.error("Error fetching event details:", err);
+          }
+        }
+
+        // Update profile with potentially enhanced user data
+        updateProfileFromUserData(data.user);
 
         // Reset error if successful
         setError("");
 
-        // Also update context if needed
-        loadUserProfileData();
+        // Update global context
+        if (!silent) {
+          loadUserProfileData();
+        }
       }
     } catch (err) {
       console.error("Error fetching user data:", err);
-      setError("Failed to fetch user data. Please try again.");
+      if (!silent) {
+        setError("Failed to fetch user data. Please try again.");
+      }
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (!silent) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   };
 
@@ -150,7 +209,7 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Stats Cards - Display team statistics */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-blue-50 p-4 rounded-lg text-center">
             <div className="text-3xl font-bold text-blue-600">
@@ -178,7 +237,7 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Display helpRequested and helpOffered */}
+        {/* Help stats */}
         <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-rose-50 p-4 rounded-lg text-center">
             <div className="text-3xl font-bold text-rose-600">
@@ -261,10 +320,72 @@ const Profile = () => {
           </div>
         </div>
 
+        {/* Events Section - NEW! */}
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold mb-4 flex items-center">
+            <FaCalendarAlt className="mr-2 text-blue-500" /> Your Events
+          </h3>
+
+          {profileData.events && profileData.events.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {profileData.events.map((event, index) => (
+                <div
+                  key={typeof event === "object" ? event._id : `event-${index}`}
+                  className="border rounded-lg p-4 hover:bg-gray-50 hover:shadow transition-all"
+                >
+                  <h4 className="font-medium text-blue-700">
+                    {typeof event === "object" && event.title
+                      ? event.title
+                      : "Event Details"}
+                  </h4>
+                  {typeof event === "object" && event.date ? (
+                    <>
+                      <p className="text-sm text-gray-600 mt-2">
+                        <strong>Date:</strong>{" "}
+                        {new Date(event.date).toLocaleDateString()}
+                      </p>
+                      {event.location && (
+                        <p className="text-sm text-gray-600">
+                          <strong>Location:</strong> {event.location}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-500 mt-2">
+                      View event details on the Events page
+                    </p>
+                  )}
+                  <a
+                    href={`/events/${
+                      typeof event === "object" ? event._id : event
+                    }`}
+                    className="mt-2 inline-block text-sm text-blue-500 hover:underline"
+                  >
+                    View Event Details
+                  </a>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-gray-50 rounded-lg p-6 text-center">
+              <FaCalendarAlt className="mx-auto text-gray-400 text-3xl mb-3" />
+              <p className="text-gray-500">
+                You haven't joined any events yet.
+              </p>
+              <a
+                href="/events"
+                className="mt-3 inline-block px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              >
+                Browse Events
+              </a>
+            </div>
+          )}
+        </div>
+
         {/* Teams Section */}
         <div className="mt-8">
           <h3 className="text-xl font-semibold mb-4 flex items-center">
-            <FaUsers className="mr-2" /> Your Teams
+            <FaUsers className="mr-2 text-green-500" /> Your Teams
           </h3>
 
           {profileData.teams && profileData.teams.length > 0 ? (
@@ -272,7 +393,7 @@ const Profile = () => {
               {profileData.teams.map((team) => (
                 <div
                   key={team._id}
-                  className="border rounded-lg p-4 flex items-center hover:shadow-md transition-all"
+                  className="border rounded-lg p-4 flex items-center hover:bg-gray-50 hover:shadow transition-all"
                 >
                   <div className="w-12 h-12 bg-gray-200 rounded-full overflow-hidden mr-4">
                     {team.avatar ? (
@@ -288,42 +409,51 @@ const Profile = () => {
                     )}
                   </div>
                   <div className="flex-grow">
-                    <h4 className="font-medium">{team.name}</h4>
+                    <h4 className="font-medium text-green-700">{team.name}</h4>
                     <p className="text-sm text-gray-600">{team.cause}</p>
                     <p className="text-xs text-gray-500">
-                      {team.memberCount || "?"} members
+                      {team.memberCount || team.members?.length || "?"} members
                     </p>
                   </div>
                   <a
                     href={`/teams/${team._id}`}
-                    className="ml-auto text-sm text-blue-500 hover:underline"
+                    className="ml-auto text-sm text-green-500 hover:underline"
                   >
-                    View
+                    View Team
                   </a>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">You haven't joined any teams yet.</p>
+            <div className="bg-gray-50 rounded-lg p-6 text-center">
+              <FaUsers className="mx-auto text-gray-400 text-3xl mb-3" />
+              <p className="text-gray-500">You haven't joined any teams yet.</p>
+              <a
+                href="/teams"
+                className="mt-3 inline-block px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+              >
+                Browse Teams
+              </a>
+            </div>
           )}
         </div>
 
         {/* Refresh Button */}
-        <div className="mt-6 text-center">
+        <div className="mt-8 text-center border-t pt-6">
           <button
-            onClick={fetchUserData}
+            onClick={() => fetchUserData()}
             disabled={refreshing}
             className={`
-              px-4 py-2 rounded flex items-center justify-center mx-auto
+              px-6 py-2 rounded flex items-center justify-center mx-auto
               ${
                 refreshing
                   ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-gray-100 hover:bg-gray-200 text-gray-800"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
               }
             `}
           >
             {refreshing && <FaSpinner className="animate-spin mr-2" />}
-            {refreshing ? "Refreshing..." : "Refresh Data"}
+            {refreshing ? "Refreshing Profile..." : "Refresh Profile Data"}
           </button>
         </div>
       </div>

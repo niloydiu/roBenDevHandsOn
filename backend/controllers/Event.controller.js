@@ -69,10 +69,15 @@ export const createEvent = async (req, res) => {
 export const getAllEvents = async (req, res) => {
   try {
     // get all events and include creator info
-    const events = await Event.find().populate("createdBy", "name email");
+    const events = await Event.find()
+      .populate("createdBy", "name email")
+      .sort({ date: 1 }); // Sort by date ascending (upcoming first)
 
-    // return events
-    res.status(200).json(events);
+    // return events - UPDATED to include success flag and put events in an object
+    res.status(200).json({
+      success: true,
+      events: events,
+    });
   } catch (error) {
     // if error happens
     console.error("Error fetching events:", error);
@@ -93,17 +98,25 @@ export const getEventById = async (req, res) => {
 
     // check if event exists
     if (!event) {
-      return res.status(404).json({ message: "Event not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
     }
 
-    // return event
-    res.status(200).json(event);
+    // return event with success flag
+    res.status(200).json({
+      success: true,
+      event: event,
+    });
   } catch (error) {
     // log error and return error message
     console.error("Error fetching event by ID:", error);
-    res
-      .status(500)
-      .json({ message: "Error fetching event", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Error fetching event",
+      error: error.message,
+    });
   }
 };
 
@@ -117,7 +130,10 @@ export const joinEvent = async (req, res) => {
     // find the event
     const event = await Event.findById(eventId);
     if (!event) {
-      return res.status(404).json({ message: "Event not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
     }
 
     // check if user already joined - this prevents duplicate entries
@@ -131,9 +147,10 @@ export const joinEvent = async (req, res) => {
 
     // if already joined, return error
     if (alreadyJoined) {
-      return res
-        .status(400)
-        .json({ message: "You are already registered for this event" });
+      return res.status(400).json({
+        success: false,
+        message: "You are already registered for this event",
+      });
     }
 
     // check if event is full
@@ -141,7 +158,10 @@ export const joinEvent = async (req, res) => {
       event.maxParticipants &&
       event.participants.length >= event.maxParticipants
     ) {
-      return res.status(400).json({ message: "Event is already full" });
+      return res.status(400).json({
+        success: false,
+        message: "Event is already full",
+      });
     }
 
     // add user to event
@@ -155,14 +175,20 @@ export const joinEvent = async (req, res) => {
       { new: true }
     );
 
-    // return success
-    res.status(200).json({ message: "Successfully joined event" });
+    // return success with updated event
+    res.status(200).json({
+      success: true,
+      message: "Successfully joined event",
+      event: event,
+    });
   } catch (error) {
     // if error
     console.error("Error joining event:", error);
-    res
-      .status(500)
-      .json({ message: "Error joining event", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Error joining event",
+      error: error.message,
+    });
   }
 };
 
@@ -176,7 +202,10 @@ export const leaveEvent = async (req, res) => {
     // find event
     const event = await Event.findById(eventId);
     if (!event) {
-      return res.status(404).json({ message: "Event not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
     }
 
     // check if user is in the event
@@ -190,9 +219,10 @@ export const leaveEvent = async (req, res) => {
 
     // if not in event, return error
     if (!isInEvent) {
-      return res
-        .status(400)
-        .json({ message: "You are not registered for this event" });
+      return res.status(400).json({
+        success: false,
+        message: "You are not registered for this event",
+      });
     }
 
     // remove user from event participants
@@ -208,13 +238,19 @@ export const leaveEvent = async (req, res) => {
       { new: true }
     );
 
-    // return success
-    res.status(200).json({ message: "Successfully left event" });
+    // return success with updated event
+    res.status(200).json({
+      success: true,
+      message: "Successfully left event",
+      event: event,
+    });
   } catch (error) {
     console.error("Error leaving event:", error);
-    res
-      .status(500)
-      .json({ message: "Error leaving event", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Error leaving event",
+      error: error.message,
+    });
   }
 };
 
@@ -230,13 +266,17 @@ export const updateEvent = async (req, res) => {
 
     // if no event found
     if (!event) {
-      return res.status(404).json({ message: "Event not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
     }
 
     // make sure the user is the creator
     // converting to string because mongodb ObjectIds aren't strings
     if (event.createdBy.toString() !== userId.toString()) {
       return res.status(403).json({
+        success: false,
         message: "You can't update this event because you didn't create it",
       });
     }
@@ -257,6 +297,7 @@ export const updateEvent = async (req, res) => {
     // if error happens
     console.error("Error updating event:", error);
     res.status(500).json({
+      success: false,
       message: "Error updating event",
       error: error.message,
     });
@@ -275,12 +316,16 @@ export const deleteEvent = async (req, res) => {
 
     // if event doesn't exist
     if (!event) {
-      return res.status(404).json({ message: "Event not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
     }
 
     // check if user is the creator
     if (event.createdBy.toString() !== userId.toString()) {
       return res.status(403).json({
+        success: false,
         message: "You can't delete this event because you didn't create it",
       });
     }
@@ -310,6 +355,7 @@ export const deleteEvent = async (req, res) => {
     // if error
     console.error("Error deleting event:", error);
     res.status(500).json({
+      success: false,
       message: "Error deleting event",
       error: error.message,
     });
