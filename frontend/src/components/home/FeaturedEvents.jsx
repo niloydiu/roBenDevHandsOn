@@ -1,26 +1,95 @@
-import React, { useContext } from "react";
-import { Link } from "react-router-dom";
+import axios from "axios";
+import React, { useContext, useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Appcontext } from "../../context/Appcontext";
 
 const FeaturedEvents = () => {
-  const { events, loadingEvents, user, token, backendUrl } =
+  const { events, loadingEvents, userData, token, backendUrl } =
     useContext(Appcontext);
+  const navigate = useNavigate();
+  const [userJoinedEvents, setUserJoinedEvents] = useState({});
+  const [processingEvent, setProcessingEvent] = useState(null); // Track which event is being joined/left
 
   // Limit the number of events displayed to 3
   const featuredEvents = events.slice(0, 3);
 
-  // Function to handle joining an event
+  // Check which events the user has joined when component mounts or userData changes
+  useEffect(() => {
+    if (
+      userData &&
+      userData.eventsJoined &&
+      Array.isArray(userData.eventsJoined)
+    ) {
+      // Create a map of eventId -> true for quick lookup
+      const joinedMap = {};
+      userData.eventsJoined.forEach((eventId) => {
+        // Handle both object with _id and plain ID string
+        const id = typeof eventId === "object" ? eventId._id : eventId;
+        joinedMap[id] = true;
+      });
+      setUserJoinedEvents(joinedMap);
+    }
+  }, [userData]);
+
+  // Function to check if user has joined an event
+  const hasUserJoinedEvent = (eventId) => {
+    return !!userJoinedEvents[eventId];
+  };
+
+  // Function to handle joining or leaving an event
   const handleJoinEvent = async (eventId) => {
     if (!token) {
       alert("Please login to join this event");
+      navigate("/login");
       return;
     }
 
     try {
-      // Add your join event API call here
-      alert("You've joined this event successfully!");
+      setProcessingEvent(eventId); // Set which event is being processed
+      const isJoined = hasUserJoinedEvent(eventId);
+
+      // API endpoint - join or leave based on current status
+      const endpoint = isJoined
+        ? `${backendUrl}/api/event/leave/${eventId}`
+        : `${backendUrl}/api/event/join/${eventId}`;
+
+      // Make API call
+      const response = await axios.post(
+        endpoint,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.success) {
+        // Update local state to reflect change
+        setUserJoinedEvents((prev) => {
+          const updated = { ...prev };
+          if (isJoined) {
+            delete updated[eventId]; // Remove from joined events
+          } else {
+            updated[eventId] = true; // Add to joined events
+          }
+          return updated;
+        });
+
+        alert(
+          isJoined
+            ? "You've successfully left the event"
+            : "You've joined this event successfully!"
+        );
+      } else {
+        alert(response.data.message || "Operation failed");
+      }
     } catch (error) {
-      alert("Failed to join event. Please try again.");
+      console.error("Event operation failed:", error);
+      alert(
+        error.response?.data?.message ||
+          "Failed to process your request. Please try again."
+      );
+    } finally {
+      setProcessingEvent(null); // Clear processing state
     }
   };
 
@@ -209,9 +278,22 @@ const FeaturedEvents = () => {
               <div className="flex space-x-3 pt-3 border-t border-gray-100">
                 <button
                   onClick={() => handleJoinEvent(event._id)}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium transition-colors duration-300"
+                  disabled={processingEvent === event._id}
+                  className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors duration-300 ${
+                    hasUserJoinedEvent(event._id)
+                      ? "bg-orange-500 hover:bg-orange-600 text-white"
+                      : "bg-blue-600 hover:bg-blue-700 text-white"
+                  } ${
+                    processingEvent === event._id
+                      ? "opacity-75 cursor-not-allowed"
+                      : ""
+                  }`}
                 >
-                  Join Event
+                  {processingEvent === event._id
+                    ? "Processing..."
+                    : hasUserJoinedEvent(event._id)
+                    ? "Leave Event"
+                    : "Join Event"}
                 </button>
                 <Link
                   to={`/events/${event._id}`}
