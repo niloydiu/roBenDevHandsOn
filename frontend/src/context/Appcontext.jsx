@@ -1,46 +1,71 @@
 import axios from "axios";
-import { createContext, useEffect, useState } from "react";
+import React, { createContext, useEffect, useState } from "react";
 
+// Making the context to share data between components
 export const Appcontext = createContext();
 
-const AppcontextProvider = (props) => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+// This is the main provider component that will wrap our app
+const AppcontextProvider = ({ children }) => {
+  // Getting backend URL from environment variables, or use localhost if not found
+  const backendUrl =
+    import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
+  // State for storing the JWT token - check localStorage first
   const [token, setToken] = useState(
     localStorage.getItem("token") ? localStorage.getItem("token") : false
   );
-  const [userData, setUserData] = useState(false);
+  // User data state - null by default until we fetch it
+  const [userData, setUserData] = useState(null);
+  // Events data - empty array by default
   const [events, setEvents] = useState([]);
+  // Loading states for UI spinners
   const [loadingEvents, setLoadingEvents] = useState(true);
+  // State for storing any error messages
   const [error, setError] = useState(null);
 
-  // Help requests state
+  // Help requests related states
   const [helpRequests, setHelpRequests] = useState([]);
   const [loadingHelpRequests, setLoadingHelpRequests] = useState(true);
   const [userHelpOffers, setUserHelpOffers] = useState({});
 
-  const isLoggedIn = !!token; // Check if the token exists
+  // This boolean tells us if user is logged in or not
+  // !! converts token to true/false
+  const isLoggedIn = !!token;
 
-  // Load user profile data when token is available
+  // This function loads the user profile data from the API
   const loadUserProfileData = async () => {
+    // Don't try to load if no token exists
     if (!token) return;
+
     try {
-      const { data } = await axios.get(`${backendUrl}/api/user/profile`, {
+      // Make the API call with the token in the header
+      const response = await axios.get(`${backendUrl}/api/user/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      const data = response.data;
+
+      // If success is true, update the userData state
       if (data.success) {
+        // Update the state with user data
         setUserData(data.user);
       } else {
+        // If the token is invalid or expired, remove it
         if (
-          data.message.includes("invalid") ||
-          data.message.includes("expired")
+          data.message?.includes("invalid") ||
+          data.message?.includes("expired")
         ) {
+          // Remove from localStorage
           localStorage.removeItem("token");
+          // Update state
           setToken(false);
         }
       }
     } catch (error) {
-      console.error("Profile loading error:", error);
+      // Log the error
+      console.error("Error loading user profile:", error);
+
+      // If we get a 401 error (unauthorized), remove the token
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
         setToken(false);
@@ -48,239 +73,370 @@ const AppcontextProvider = (props) => {
     }
   };
 
-  // Fetch all events
+  // This function gets all events from the API
   const fetchAllEvents = async () => {
     try {
+      // Set loading to true so we show spinner
       setLoadingEvents(true);
+
+      // Make API call to get events
       const response = await axios.get(`${backendUrl}/api/event`);
 
-      // Check if we received data in the response
+      // If we got data
       if (response && response.data) {
-        // Handle different response structures
+        // The API might return data in different formats
+        // Handling different cases
         if (Array.isArray(response.data)) {
-          // If API returns array directly
+          // If it's already an array, use it directly
           setEvents(response.data);
         } else if (
           response.data.events &&
           Array.isArray(response.data.events)
         ) {
-          // If API returns { success: true, events: [...] }
+          // If there's an events property that's an array
           setEvents(response.data.events);
         } else if (response.data.success && Array.isArray(response.data.data)) {
-          // Another common format { success: true, data: [...] }
+          // If there's a success flag and data array
           setEvents(response.data.data);
         } else {
-          // Unexpected structure but has data, log it and try to use it
-          console.warn("Unexpected event data structure:", response.data);
+          // If we don't understand the format, log warning and try our best
+          console.error("Unexpected data format for events:", response.data);
+          // Use whatever array we can find or an empty array
           setEvents(Array.isArray(response.data) ? response.data : []);
         }
       } else {
-        console.error("Empty response when fetching events");
+        // If no data at all
+        console.error("No data received when fetching events");
         setEvents([]);
       }
     } catch (error) {
-      console.error("Error fetching events:", error.message || "Unknown error");
-      console.error("Full error:", error);
+      // Log error and update error state
+      console.error("Failed to fetch events:", error);
       setError(error.message || "Failed to load events");
       setEvents([]);
     } finally {
+      // Always set loading to false when done
       setLoadingEvents(false);
     }
   };
 
-  // Fetch all help requests
+  // Function to get all help requests from API
   const fetchAllHelpRequests = async () => {
     try {
+      // Set loading to true for spinner
       setLoadingHelpRequests(true);
-      const { data } = await axios.get(`${backendUrl}/api/help`);
+
+      // Make API call
+      const response = await axios.get(`${backendUrl}/api/help`);
+      const data = response.data;
+
       if (data.success) {
+        // Update help requests state with the data
         setHelpRequests(data.helpRequests);
 
-        // Update user help offers state
+        // Now we need to check which requests the user has offered help for
         if (isLoggedIn && userData) {
+          // Create an object to track which requests user has offered help for
           const userOffers = {};
+
+          // Loop through all help requests
           data.helpRequests.forEach((request) => {
-            const hasOffered = request.helpers?.some((helper) =>
-              typeof helper === "object"
-                ? helper._id === userData._id
-                : helper === userData._id
-            );
-            userOffers[request._id] = hasOffered || false;
+            // Check if user is in the helpers array
+            let hasOffered = false;
+
+            // Sometimes helper can be an object and sometimes just an ID
+            if (request.helpers && request.helpers.length > 0) {
+              for (let i = 0; i < request.helpers.length; i++) {
+                const helper = request.helpers[i];
+                if (typeof helper === "object") {
+                  // If helper is an object, compare _id
+                  if (helper._id === userData._id) {
+                    hasOffered = true;
+                    break;
+                  }
+                } else {
+                  // If helper is just an ID string
+                  if (helper === userData._id) {
+                    hasOffered = true;
+                    break;
+                  }
+                }
+              }
+            }
+
+            // Store whether user has offered help for this request
+            userOffers[request._id] = hasOffered;
           });
+
+          // Update state with user's help offers
           setUserHelpOffers(userOffers);
         }
       } else {
-        console.error("Failed to fetch help requests:", data.message);
+        // If not successful, log error and set empty array
+        console.error("Failed to get help requests:", data.message);
         setHelpRequests([]);
       }
     } catch (error) {
-      console.error("Error fetching help requests:", error);
+      // Log error and set empty array
+      console.error("Error getting help requests:", error);
       setHelpRequests([]);
     } finally {
+      // Always turn off loading spinner
       setLoadingHelpRequests(false);
     }
   };
 
-  // Create a new help request
+  // Function to create a new help request
   const createHelpRequest = async (newRequest) => {
     try {
-      const { data } = await axios.post(
+      // Make API call to create help request
+      const response = await axios.post(
         `${backendUrl}/api/help/create`,
-        newRequest,
+        newRequest, // The data for the new request
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`, // Need the token for auth
           },
         }
       );
 
+      const data = response.data;
+
+      // If successful
       if (data.success) {
-        // Update the help requests list with the new request
-        setHelpRequests((prev) => [data.helpRequest, ...prev]);
+        // Add new request to the beginning of our help requests array
+        const updatedHelpRequests = [data.helpRequest, ...helpRequests];
+        setHelpRequests(updatedHelpRequests);
+
+        // Return success
         return { success: true, message: "Help request created successfully!" };
       } else {
+        // Return the error from API
         return {
           success: false,
           message: data.message || "Failed to create help request",
         };
       }
     } catch (error) {
+      // Log error and return error message
       console.error("Error creating help request:", error);
       return {
         success: false,
         message:
           error.response?.data?.message ||
-          "An error occurred while creating the help request",
+          "Something went wrong when creating the help request",
       };
     }
   };
 
-  // Offer or withdraw help for an existing request
+  // Function to offer or withdraw help for a request
   const offerHelp = async (requestId) => {
     try {
-      const { data } = await axios.post(
+      // Make API call to offer help
+      const response = await axios.post(
         `${backendUrl}/api/help/offer/${requestId}`,
-        {},
+        {}, // Empty object since we're not sending any data
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`, // Need the token for auth
           },
         }
       );
 
+      const data = response.data;
+
+      // If successful
       if (data.success) {
         // Update the help requests list with the updated request
-        const updatedRequests = helpRequests.map((request) =>
-          request._id === requestId ? data.helpRequest : request
-        );
-        setHelpRequests(updatedRequests);
+        // We need to go through each request and replace the one that changed
+        const newHelpRequests = [];
+        for (let i = 0; i < helpRequests.length; i++) {
+          if (helpRequests[i]._id === requestId) {
+            // Replace with updated request
+            newHelpRequests.push(data.helpRequest);
+          } else {
+            // Keep the original request
+            newHelpRequests.push(helpRequests[i]);
+          }
+        }
+        setHelpRequests(newHelpRequests);
 
-        // Update user's help offers state
-        setUserHelpOffers((prev) => ({
-          ...prev,
-          [requestId]: data.hasOffered,
-        }));
+        // Update the userHelpOffers state so we know if user has offered help
+        const newUserHelpOffers = { ...userHelpOffers };
+        newUserHelpOffers[requestId] = data.hasOffered;
+        setUserHelpOffers(newUserHelpOffers);
 
+        // Return success
         return {
           success: true,
           message: data.message,
           hasOffered: data.hasOffered,
         };
       } else {
+        // Return error from API
         return {
           success: false,
           message: data.message || "Failed to process help offer",
         };
       }
     } catch (error) {
+      // Log error and return error message
       console.error("Error offering help:", error);
       return {
         success: false,
         message:
           error.response?.data?.message ||
-          "An error occurred while processing your help offer",
+          "Something went wrong when offering help",
       };
     }
   };
 
-  // Check if user has offered help for a request
+  // Function to check if user has offered help for a specific request
   const hasUserOfferedHelp = (requestId) => {
-    return !!userHelpOffers[requestId];
+    // If userHelpOffers[requestId] is true, return true, otherwise return false
+    if (userHelpOffers[requestId]) {
+      return true;
+    } else {
+      return false;
+    }
   };
 
-  // Delete a help request
+  // Function to delete a help request
   const deleteHelpRequest = async (requestId) => {
     try {
-      const { data } = await axios.delete(
+      // Make API call to delete the request
+      const response = await axios.delete(
         `${backendUrl}/api/help/${requestId}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`, // Need the token for auth
           },
         }
       );
 
+      const data = response.data;
+
+      // If successful
       if (data.success) {
-        // Update the help requests list by removing the deleted request
-        setHelpRequests((prev) =>
-          prev.filter((request) => request._id !== requestId)
-        );
+        // Remove the deleted request from our state
+        // We'll keep all requests except the one that matches the ID
+        const newHelpRequests = [];
+        for (let i = 0; i < helpRequests.length; i++) {
+          if (helpRequests[i]._id !== requestId) {
+            newHelpRequests.push(helpRequests[i]);
+          }
+        }
+        setHelpRequests(newHelpRequests);
+
+        // Return success
         return {
           success: true,
           message: "Help request deleted successfully!",
         };
       } else {
+        // Return error from API
         return {
           success: false,
           message: data.message || "Failed to delete help request",
         };
       }
     } catch (error) {
+      // Log error and return error message
       console.error("Error deleting help request:", error);
       return {
         success: false,
         message:
           error.response?.data?.message ||
-          "An error occurred while deleting the help request",
+          "Something went wrong when deleting the help request",
       };
     }
   };
 
-  // Load initial data when component mounts or token changes
+  // Function to log in a user
+  const login = async (credentials) => {
+    try {
+      // Make API call to login
+      const response = await axios.post(
+        `${backendUrl}/api/user/login`,
+        credentials // Email and password
+      );
+
+      const data = response.data;
+
+      // If successful
+      if (data.success) {
+        // Save token to localStorage
+        localStorage.setItem("token", data.token);
+        // Update token state
+        setToken(data.token);
+        // Load user data now that we're logged in
+        await loadUserProfileData();
+        // Return success
+        return { success: true };
+      } else {
+        // Return error from API
+        return { success: false, message: data.message };
+      }
+    } catch (error) {
+      // Log error and return error message
+      console.error("Login failed:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Login failed",
+      };
+    }
+  };
+
+  // Function to log out a user
+  const logout = () => {
+    // Remove token from localStorage
+    localStorage.removeItem("token");
+    // Update state
+    setToken(false);
+    // Clear user data
+    setUserData(null);
+  };
+
+  // This useEffect runs when the component mounts or when token changes
   useEffect(() => {
+    // Load user data if we have a token
     if (token) {
       loadUserProfileData();
     }
+    // Always load events and help requests
     fetchAllEvents();
     fetchAllHelpRequests();
-  }, [token]);
+  }, [token]); // This runs again if token changes
 
-  // Context value to be provided
+  // All the values we want to provide to components using this context
   const value = {
-    backendUrl,
-    token,
-    setToken,
-    isLoggedIn,
-    loadUserProfileData,
-    userData,
-    setUserData,
-    events,
-    fetchAllEvents,
-    loadingEvents,
-    error,
+    backendUrl, // URL for API calls
+    token, // JWT token
+    setToken, // Function to update token
+    isLoggedIn, // Boolean whether user is logged in
+    loadUserProfileData, // Function to load user data
+    userData, // User data object
+    setUserData, // Function to update user data
+    events, // Array of events
+    fetchAllEvents, // Function to get events
+    loadingEvents, // Boolean whether events are loading
+    error, // Error message
+    login, // Function to log in
+    logout, // Function to log out
+
     // Help request related values
-    helpRequests,
-    loadingHelpRequests,
-    fetchAllHelpRequests,
-    createHelpRequest,
-    offerHelp,
-    deleteHelpRequest,
-    hasUserOfferedHelp,
+    helpRequests, // Array of help requests
+    loadingHelpRequests, // Boolean whether help requests are loading
+    fetchAllHelpRequests, // Function to get help requests
+    createHelpRequest, // Function to create a help request
+    offerHelp, // Function to offer help for a request
+    deleteHelpRequest, // Function to delete a help request
+    hasUserOfferedHelp, // Function to check if user has offered help
   };
 
-  return (
-    <Appcontext.Provider value={value}>{props.children}</Appcontext.Provider>
-  );
+  // Return the provider with all children wrapped inside
+  return <Appcontext.Provider value={value}>{children}</Appcontext.Provider>;
 };
 
+// Export the provider component
 export default AppcontextProvider;

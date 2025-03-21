@@ -1,24 +1,50 @@
 import express from "express";
 import {
-  createHelpRequest,
-  deleteHelpRequest,
-  getAllHelpRequests,
+  createHelp,
+  deleteHelp,
+  getAllHelp,
+  getHelpById,
   offerHelp,
+  updateHelp,
+  withdrawHelp,
 } from "../controllers/Help.controller.js";
-import authUser from "../middleware/User.middleware.js";
+import authUser from "../middleware/User.middleware.js"; // this checks if user is logged in
 
-const helpRouter = express.Router();
+// make a new router for help request routes
+const router = express.Router();
 
-// Create help request (requires authentication)
-helpRouter.post("/create", authUser, createHelpRequest);
+// printing this to see if our code runs
+console.log("Setting up help request routes...");
 
-// Get all help requests (public route)
-helpRouter.get("/", getAllHelpRequests);
+// routes that don't need login (public)
+console.log("Setting up public help routes");
 
-// Offer help for a request (requires authentication)
-helpRouter.post("/offer/:requestId", authUser, offerHelp);
+// this gets all help requests - GET /api/help
+router.get("/", getAllHelp);
 
-// Delete help request (requires authentication)
-helpRouter.delete("/:id", authUser, deleteHelpRequest);
+// this gets one help request by id - GET /api/help/123
+router.get("/:id", getHelpById);
 
-export default helpRouter;
+// routes that need login (protected)
+console.log("Setting up protected help routes");
+
+// this creates a new help request - POST /api/help/create
+router.post("/create", authUser, createHelp);
+
+// this lets a user offer help - POST /api/help/offer/123
+router.post("/offer/:requestId", authUser, offerHelp);
+
+// this lets a user take back their offer - POST /api/help/withdraw/123
+router.post("/withdraw/:requestId", authUser, withdrawHelp);
+
+// this updates a help request - PUT /api/help/123
+router.put("/:id", authUser, updateHelp);
+
+// this deletes a help request - DELETE /api/help/123
+router.delete("/:id", authUser, deleteHelp);
+
+// let's check how many routes we made
+console.log("Set up " + 7 + " help routes successfully!");
+
+// export the router so we can use it in server.js
+export default router;
