@@ -46,6 +46,7 @@ export const createHelp = async (req, res) => {
 
     // return success
     res.status(201).json({
+      success: true,
       message: "Help request created successfully",
       helpRequest: helpRequest,
     });
@@ -53,9 +54,11 @@ export const createHelp = async (req, res) => {
     // if something breaks
     console.log("ERROR in createHelp:");
     console.log(error);
-    res
-      .status(500)
-      .json({ message: "Error creating help request", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Error creating help request",
+      error: error.message,
+    });
   }
 };
 
@@ -67,16 +70,24 @@ export const getAllHelp = async (req, res) => {
     // get all help requests with user info
     const helpRequests = await Help.find()
       .populate("createdBy", "name email")
-      .populate("helpers", "name email");
+      .populate("helpers", "name email")
+      .sort({ createdAt: -1 }); // Sort by newest first
 
     console.log("Found " + helpRequests.length + " help requests");
-    res.status(200).json({ helpRequests: helpRequests });
+
+    // Return with success flag and helpRequests array
+    res.status(200).json({
+      success: true,
+      helpRequests: helpRequests,
+    });
   } catch (error) {
     console.log("ERROR in getAllHelp:");
     console.log(error);
-    res
-      .status(500)
-      .json({ message: "Error fetching help requests", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Error fetching help requests",
+      error: error.message,
+    });
   }
 };
 
@@ -95,17 +106,25 @@ export const getHelpById = async (req, res) => {
     // check if it exists
     if (!helpRequest) {
       console.log("No help request found with that ID!");
-      return res.status(404).json({ message: "Help request not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Help request not found",
+      });
     }
 
     console.log("Found help request: " + helpRequest.title);
-    res.status(200).json(helpRequest);
+    res.status(200).json({
+      success: true,
+      helpRequest: helpRequest,
+    });
   } catch (error) {
     console.log("ERROR in getHelpById:");
     console.log(error);
-    res
-      .status(500)
-      .json({ message: "Error fetching help request", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Error fetching help request",
+      error: error.message,
+    });
   }
 };
 
@@ -125,7 +144,10 @@ export const offerHelp = async (req, res) => {
     // check if it exists
     if (!helpRequest) {
       console.log("Help request not found!");
-      return res.status(404).json({ message: "Help request not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Help request not found",
+      });
     }
 
     // check if user already offered help
@@ -139,9 +161,10 @@ export const offerHelp = async (req, res) => {
 
     if (alreadyOffered) {
       console.log("User already offered help");
-      return res
-        .status(400)
-        .json({ message: "You have already offered help for this request" });
+      return res.status(400).json({
+        success: false,
+        message: "You have already offered help for this request",
+      });
     }
 
     // add user to helpers
@@ -163,15 +186,19 @@ export const offerHelp = async (req, res) => {
 
     // return success
     res.status(200).json({
+      success: true,
       message: "Help offered successfully",
       helpRequest: helpRequest,
+      hasOffered: true,
     });
   } catch (error) {
     console.log("ERROR in offerHelp:");
     console.log(error);
-    res
-      .status(500)
-      .json({ message: "Error offering help", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Error offering help",
+      error: error.message,
+    });
   }
 };
 
@@ -191,7 +218,10 @@ export const withdrawHelp = async (req, res) => {
     // check if it exists
     if (!helpRequest) {
       console.log("Help request not found!");
-      return res.status(404).json({ message: "Help request not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Help request not found",
+      });
     }
 
     // check if user has offered help
@@ -205,9 +235,10 @@ export const withdrawHelp = async (req, res) => {
 
     if (!hasOffered) {
       console.log("User hasn't offered help");
-      return res
-        .status(400)
-        .json({ message: "You haven't offered help for this request" });
+      return res.status(400).json({
+        success: false,
+        message: "You haven't offered help for this request",
+      });
     }
 
     // remove user from helpers
@@ -231,15 +262,19 @@ export const withdrawHelp = async (req, res) => {
 
     // return success
     res.status(200).json({
+      success: true,
       message: "Help withdrawn successfully",
       helpRequest: helpRequest,
+      hasOffered: false,
     });
   } catch (error) {
     console.log("ERROR in withdrawHelp:");
     console.log(error);
-    res
-      .status(500)
-      .json({ message: "Error withdrawing help", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Error withdrawing help",
+      error: error.message,
+    });
   }
 };
 
@@ -257,13 +292,17 @@ export const updateHelp = async (req, res) => {
     // check if it exists
     if (!helpRequest) {
       console.log("Help request not found!");
-      return res.status(404).json({ message: "Help request not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Help request not found",
+      });
     }
 
     // check if user is the creator
     if (helpRequest.createdBy.toString() !== userId.toString()) {
       console.log("User is not the creator!");
       return res.status(403).json({
+        success: false,
         message: "You are not authorized to update this help request",
       });
     }
@@ -276,15 +315,18 @@ export const updateHelp = async (req, res) => {
 
     console.log("Help request updated successfully");
     res.status(200).json({
+      success: true,
       message: "Help request updated successfully",
       helpRequest: updatedHelp,
     });
   } catch (error) {
     console.log("ERROR in updateHelp:");
     console.log(error);
-    res
-      .status(500)
-      .json({ message: "Error updating help request", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Error updating help request",
+      error: error.message,
+    });
   }
 };
 
@@ -302,13 +344,17 @@ export const deleteHelp = async (req, res) => {
     // check if it exists
     if (!helpRequest) {
       console.log("Help request not found!");
-      return res.status(404).json({ message: "Help request not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Help request not found",
+      });
     }
 
     // check if user is the creator
     if (helpRequest.createdBy.toString() !== userId.toString()) {
       console.log("User is not the creator!");
       return res.status(403).json({
+        success: false,
         message: "You are not authorized to delete this help request",
       });
     }
@@ -342,12 +388,17 @@ export const deleteHelp = async (req, res) => {
     }
 
     // return success
-    res.status(200).json({ message: "Help request deleted successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Help request deleted successfully",
+    });
   } catch (error) {
     console.log("ERROR in deleteHelp:");
     console.log(error);
-    res
-      .status(500)
-      .json({ message: "Error deleting help request", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Error deleting help request",
+      error: error.message,
+    });
   }
 };

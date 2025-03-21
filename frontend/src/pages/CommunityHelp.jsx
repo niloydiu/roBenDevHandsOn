@@ -13,6 +13,7 @@ function CommunityHelp() {
     userData,
     deleteHelpRequest,
     hasUserOfferedHelp,
+    fetchAllHelpRequests, // Add this to ensure we can fetch help requests
   } = useContext(Appcontext);
 
   const [filteredRequests, setFilteredRequests] = useState([]);
@@ -32,11 +33,23 @@ function CommunityHelp() {
     showMyRequests: false, // New filter for user's own requests
   });
 
+  // Fetch help requests when component mounts
+  useEffect(() => {
+    console.log("Fetching help requests on mount");
+    fetchAllHelpRequests();
+  }, []); // Empty dependency array means this runs once when component mounts
+
   // Update filtered requests whenever help requests change
   useEffect(() => {
-    filterRequests(filters);
-  }, [helpRequests, userData]);
+    console.log("Filtering help requests...", helpRequests?.length || 0);
+    if (helpRequests && helpRequests.length > 0) {
+      filterRequests(filters);
+    } else {
+      setFilteredRequests([]);
+    }
+  }, [helpRequests, userData, filters]); // Added filters as dependency
 
+  // Function to handle input changes for the new request form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewRequest((prev) => ({
@@ -45,6 +58,7 @@ function CommunityHelp() {
     }));
   };
 
+  // Function to handle form submission for new help request
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -72,6 +86,7 @@ function CommunityHelp() {
     }
   };
 
+  // Function to handle offering help
   const handleOfferHelpClick = async (requestId) => {
     if (!isLoggedIn) {
       navigate("/signup"); // Redirect to signup if the user is not logged in
@@ -82,6 +97,7 @@ function CommunityHelp() {
     alert(result.message);
   };
 
+  // Function to handle deleting a help request
   const handleDeleteHelpRequest = async (requestId) => {
     if (confirm("Are you sure you want to delete this help request?")) {
       const result = await deleteHelpRequest(requestId);
@@ -89,32 +105,39 @@ function CommunityHelp() {
     }
   };
 
+  // Function to handle filter changes
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
 
-    setFilters((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Apply filters
-    filterRequests({
+    const newFilters = {
       ...filters,
       [name]: value,
-    });
+    };
+
+    setFilters(newFilters);
+    // We don't need to call filterRequests here since useEffect will handle it
   };
 
+  // Function to toggle the "My Requests" filter
   const handleMyRequestsToggle = () => {
-    // Toggle based on current state instead of reading from event
+    // Toggle based on current state
     const newFilters = {
       ...filters,
       showMyRequests: !filters.showMyRequests,
     };
     setFilters(newFilters);
-    filterRequests(newFilters);
+    // We don't need to call filterRequests here since useEffect will handle it
   };
 
+  // Function to filter requests based on selected filters
   const filterRequests = (activeFilters) => {
+    // Make sure helpRequests exists and is an array
+    if (!helpRequests || !Array.isArray(helpRequests)) {
+      console.log("No help requests to filter");
+      setFilteredRequests([]);
+      return;
+    }
+
     let filtered = [...helpRequests];
 
     // Filter by urgency
@@ -128,21 +151,26 @@ function CommunityHelp() {
     if (activeFilters.category !== "all") {
       filtered = filtered.filter(
         (request) =>
+          request.category &&
           request.category.toLowerCase() ===
-          activeFilters.category.toLowerCase()
+            activeFilters.category.toLowerCase()
       );
     }
 
     // Filter by user's own requests
     if (activeFilters.showMyRequests && isLoggedIn && userData) {
       filtered = filtered.filter(
-        (request) => request.createdBy?._id === userData._id
+        (request) => request.createdBy && request.createdBy._id === userData._id
       );
     }
 
+    console.log(
+      `Filtered from ${helpRequests.length} to ${filtered.length} requests`
+    );
     setFilteredRequests(filtered);
   };
 
+  // Function to determine urgency badge class
   const getUrgencyBadgeClass = (level) => {
     switch (level) {
       case "urgent":
@@ -156,8 +184,14 @@ function CommunityHelp() {
     }
   };
 
+  // Function to check if a request was created by the current user
   const isUserRequest = (request) => {
-    return isLoggedIn && userData && request.createdBy?._id === userData._id;
+    return (
+      isLoggedIn &&
+      userData &&
+      request.createdBy &&
+      request.createdBy._id === userData._id
+    );
   };
 
   return (
@@ -340,6 +374,14 @@ function CommunityHelp() {
         </div>
       </div>
 
+      {/* Debug button to manually refresh help requests */}
+      <button
+        onClick={fetchAllHelpRequests}
+        className="mb-4 bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded-md text-sm"
+      >
+        🔄 Refresh Help Requests
+      </button>
+
       {/* Help Requests */}
       <div id="help-requests" className="space-y-6">
         <h2 className="text-2xl font-semibold">Current Help Requests</h2>
@@ -347,9 +389,16 @@ function CommunityHelp() {
           <div className="text-center py-8">
             <p>Loading requests...</p>
           </div>
-        ) : filteredRequests.length === 0 ? (
+        ) : !helpRequests || helpRequests.length === 0 ? (
           <div className="text-center py-8 bg-gray-100 rounded-lg">
             <p>No help requests found. Be the first to create one!</p>
+          </div>
+        ) : filteredRequests.length === 0 ? (
+          <div className="text-center py-8 bg-gray-100 rounded-lg">
+            <p>
+              No help requests match your filters. Try changing your filters or
+              create a new request!
+            </p>
           </div>
         ) : (
           filteredRequests.map((request) => (
