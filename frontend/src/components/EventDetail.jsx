@@ -34,12 +34,17 @@ function EventDetail() {
         setLoading(true);
         const response = await axios.get(`${backendUrl}/api/event/${id}`);
         console.log("Event data:", response.data);
-        setEvent(response.data);
+
+        // FIX: Extract event object from response.data.event instead of using response.data directly
+        const eventData = response.data.success
+          ? response.data.event
+          : response.data;
+        setEvent(eventData);
 
         // Check if user is registered for this event
-        if (userId && response.data.participants) {
+        if (userId && eventData.participants) {
           // Handle both array of IDs and array of objects
-          const isUserRegistered = response.data.participants.some(
+          const isUserRegistered = eventData.participants.some(
             (participant) => {
               if (typeof participant === "object") {
                 if (participant.user) {
@@ -111,7 +116,11 @@ function EventDetail() {
 
       // Refresh event data to update participant count
       const response = await axios.get(`${backendUrl}/api/event/${id}`);
-      setEvent(response.data);
+      // FIX: Extract event object from response.data.event
+      const eventData = response.data.success
+        ? response.data.event
+        : response.data;
+      setEvent(eventData);
     } catch (err) {
       console.error("Error updating registration:", err);
       alert(
@@ -168,9 +177,11 @@ function EventDetail() {
 
   // Calculate percentage of spots filled
   const participantsCount = event.participants?.length || 0;
+  // FIX: Make sure maxParticipants is treated as a number
+  const maxParticipants = parseInt(event.maxParticipants) || 0;
   const participationPercentage =
-    (participantsCount / event.maxParticipants) * 100;
-  const spotsRemaining = event.maxParticipants - participantsCount;
+    maxParticipants > 0 ? (participantsCount / maxParticipants) * 100 : 0;
+  const spotsRemaining = maxParticipants - participantsCount;
 
   // Format date
   const formattedDate = new Date(event.date).toLocaleDateString("en-US", {
@@ -428,7 +439,7 @@ function EventDetail() {
                     ></div>
                   </div>
                   <span className="ml-3 text-sm font-medium">
-                    {participantsCount}/{event.maxParticipants}
+                    {participantsCount}/{maxParticipants}
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
