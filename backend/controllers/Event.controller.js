@@ -1,4 +1,5 @@
 import Event from "../models/Event.model.js";
+import Team from "../models/Team.model.js";
 import User from "../models/User.model.js";
 
 // this function creates a new event
@@ -168,18 +169,33 @@ export const joinEvent = async (req, res) => {
     event.participants.push(userId);
     await event.save();
 
-    // add event to user
-    await User.findByIdAndUpdate(
-      userId,
-      { $addToSet: { eventsJoined: eventId } },
-      { new: true }
+    // add event to user and award points
+    const user = await User.findById(userId);
+
+    // Initialize eventsJoined array if it doesn't exist
+    if (!user.eventsJoined) {
+      user.eventsJoined = [];
+    }
+
+    // Add the event
+    user.eventsJoined.push(eventId);
+
+    // Award points (10 points for joining an event)
+    const pointsToAward = 10;
+    user.points = (user.points || 0) + pointsToAward;
+
+    await user.save();
+
+    console.log(
+      `User ${userId} joined event ${eventId} and earned ${pointsToAward} points`
     );
 
     // return success with updated event
     res.status(200).json({
       success: true,
-      message: "Successfully joined event",
+      message: `Successfully joined event and earned ${pointsToAward} points!`,
       event: event,
+      points: user.points,
     });
   } catch (error) {
     // if error
@@ -357,6 +373,86 @@ export const deleteEvent = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error deleting event",
+      error: error.message,
+    });
+  }
+};
+
+// New function to record volunteer hours and award points after completing an event
+export const completeEvent = async (req, res) => {
+  try {
+    const { eventId, hoursContributed } = req.body;
+    const userId = req.user.id;
+
+    // Validate hours contributed
+    const hours = Number(hoursContributed);
+    if (isNaN(hours) || hours <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide valid volunteer hours",
+      });
+    }
+
+    // Find the event
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    // Check if user is a participant
+    const isParticipant = event.participants.some(
+      (participantId) => participantId.toString() === userId.toString()
+    );
+
+    if (!isParticipant) {
+      return res.status(400).json({
+        success: false,
+        message: "You are not a participant in this event",
+      });
+    }
+
+    // Update user's volunteer hours and points
+    const user = await User.findById(userId);
+
+    // Initialize volunteerHours if it doesn't exist
+    user.volunteerHours = (user.volunteerHours || 0) + hours;
+
+    // Award points (20 points per hour volunteered)
+    const pointsEarned = hours * 20;
+    user.points = (user.points || 0) + pointsEarned;
+
+    await user.save();
+
+    console.log(
+      `User ${userId} recorded ${hours} volunteer hours for event ${eventId} and earned ${pointsEarned} points`
+    );
+
+    // If the event is associated with a team, update team hours too
+    if (event.team) {
+      const team = await Team.findById(event.team);
+      if (team) {
+        team.hoursContributed = (team.hoursContributed || 0) + hours;
+        await team.save();
+        console.log(`Team ${event.team} hours increased by ${hours}`);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `You've logged ${hours} volunteer hours and earned ${pointsEarned} points!`,
+      user: {
+        volunteerHours: user.volunteerHours,
+        points: user.points,
+      },
+    });
+  } catch (error) {
+    console.error("Error completing event:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
       error: error.message,
     });
   }

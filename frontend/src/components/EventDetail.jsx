@@ -2,6 +2,8 @@ import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Appcontext } from "../context/Appcontext";
+// Import the EventCompletion component
+import EventCompletion from "./EventCompletion";
 
 function EventDetail() {
   const { id } = useParams();
@@ -28,55 +30,52 @@ function EventDetail() {
     return event.createdBy === userData._id;
   };
 
-  useEffect(() => {
-    const fetchEventDetail = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get(`${backendUrl}/api/event/${id}`);
-        console.log("Event data:", response.data);
+  // Make fetchEventDetail available outside useEffect
+  const fetchEventDetail = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${backendUrl}/api/event/${id}`);
+      console.log("Event data:", response.data);
 
-        // FIX: Extract event object from response.data.event instead of using response.data directly
-        const eventData = response.data.success
-          ? response.data.event
-          : response.data;
-        setEvent(eventData);
+      // FIX: Extract event object from response.data.event instead of using response.data directly
+      const eventData = response.data.success
+        ? response.data.event
+        : response.data;
+      setEvent(eventData);
 
-        // Check if user is registered for this event
-        if (userId && eventData.participants) {
-          // Handle both array of IDs and array of objects
-          const isUserRegistered = eventData.participants.some(
-            (participant) => {
-              if (typeof participant === "object") {
-                if (participant.user) {
-                  // Compare with different possible properties
-                  const participantId =
-                    participant.user._id ||
-                    participant.user.id ||
-                    participant.user;
+      // Check if user is registered for this event
+      if (userId && eventData.participants) {
+        // Handle both array of IDs and array of objects
+        const isUserRegistered = eventData.participants.some((participant) => {
+          if (typeof participant === "object") {
+            if (participant.user) {
+              // Compare with different possible properties
+              const participantId =
+                participant.user._id || participant.user.id || participant.user;
 
-                  return String(participantId) === String(userId);
-                }
-                // If the participant object has its own id
-                return (
-                  String(participant._id) === String(userId) ||
-                  String(participant.id) === String(userId)
-                );
-              }
-              // Direct comparison for simple ID strings
-              return String(participant) === String(userId);
+              return String(participantId) === String(userId);
             }
-          );
+            // If the participant object has its own id
+            return (
+              String(participant._id) === String(userId) ||
+              String(participant.id) === String(userId)
+            );
+          }
+          // Direct comparison for simple ID strings
+          return String(participant) === String(userId);
+        });
 
-          setIsRegistered(isUserRegistered);
-        }
-      } catch (err) {
-        console.error("Error fetching event details:", err);
-        setError(err.response?.data?.message || "Failed to load event details");
-      } finally {
-        setLoading(false);
+        setIsRegistered(isUserRegistered);
       }
-    };
+    } catch (err) {
+      console.error("Error fetching event details:", err);
+      setError(err.response?.data?.message || "Failed to load event details");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (id && backendUrl) {
       fetchEventDetail();
     }
@@ -190,6 +189,10 @@ function EventDetail() {
     month: "long",
     day: "numeric",
   });
+
+  // Check if event is in the past
+  const eventDate = new Date(event.date);
+  const isEventPast = eventDate < new Date();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -501,23 +504,36 @@ function EventDetail() {
 
               {/* Only show join button if user is not the creator */}
               {!isEventCreator() && (
-                <button
-                  onClick={handleRegisterClick}
-                  disabled={!isRegistered && spotsRemaining <= 0}
-                  className={`w-full py-3 px-4 rounded-md font-medium text-white transition-colors duration-300 ${
-                    isRegistered
-                      ? "bg-red-600 hover:bg-red-700"
+                <div className="space-y-4">
+                  <button
+                    onClick={handleRegisterClick}
+                    disabled={!isRegistered && spotsRemaining <= 0}
+                    className={`w-full py-3 px-4 rounded-md font-medium text-white transition-colors duration-300 ${
+                      isRegistered
+                        ? "bg-red-600 hover:bg-red-700"
+                        : spotsRemaining <= 0
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700"
+                    }`}
+                  >
+                    {isRegistered
+                      ? "Leave Event"
                       : spotsRemaining <= 0
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700"
-                  }`}
-                >
-                  {isRegistered
-                    ? "Leave Event"
-                    : spotsRemaining <= 0
-                    ? "Event Full"
-                    : "Join Event"}
-                </button>
+                      ? "Event Full"
+                      : "Join Event"}
+                  </button>
+
+                  {/* Show EventCompletion component for registered users and past events */}
+                  {isRegistered && isEventPast && (
+                    <EventCompletion
+                      eventId={id}
+                      eventTitle={event.title}
+                      onSuccess={() => {
+                        fetchEventDetail();
+                      }}
+                    />
+                  )}
+                </div>
               )}
 
               <div className="mt-5 bg-blue-50 p-4 rounded-lg">

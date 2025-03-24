@@ -118,9 +118,6 @@ const loginUser = async (req, res) => {
 // this gets user profile
 const userProfile = async (req, res) => {
   try {
-    // get user info and include teams and events
-    console.log("Getting profile for user id: " + req.user.id);
-
     // this is how to get related data
     const user = await User.findById(req.user.id)
       .select("-password") // don't include password
@@ -133,11 +130,6 @@ const userProfile = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User not found" });
     }
-
-    // print some info for debugging
-    console.log("Found user: " + user.name);
-    console.log("Teams created: " + user.teamsCreated);
-    console.log("Teams joined: " + (user.teams?.length || 0));
 
     // return the user
     res.status(200).json({ success: true, user });

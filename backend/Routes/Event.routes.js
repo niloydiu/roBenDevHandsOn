@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  completeEvent,
   createEvent,
   deleteEvent,
   getAllEvents,
@@ -32,6 +33,9 @@ eventRouter.post("/join/:id", authUser, joinEvent);
 
 // this lets someone leave an event - POST /api/event/leave/123
 eventRouter.post("/leave/:id", authUser, leaveEvent);
+
+// this records hours after completing an event - POST /api/event/complete
+eventRouter.post("/complete", authUser, completeEvent);
 
 // this updates an event - PUT /api/event/123
 eventRouter.put("/:id", authUser, updateEvent);

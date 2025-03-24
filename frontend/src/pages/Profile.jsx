@@ -23,52 +23,67 @@ const Profile = () => {
     eventsJoined: 0,
     helpRequested: 0,
     helpOffered: 0,
+    volunteerHours: 0, // Added to initial state
+    points: 0, // Added to initial state
     teams: [],
-    events: [], // Added to store event data
+    events: [],
   });
+
+  // Separate loading states for different scenarios
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
+
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
   // Fetch user data on component mount and token changes
   useEffect(() => {
     if (token) {
-      fetchUserData();
+      fetchUserDataInitial();
     } else {
-      setLoading(false);
+      setIsInitialLoading(false);
     }
   }, [token]);
 
-  // Set up a periodic refresh to keep data in sync
+  // Update profile when tab becomes visible again
   useEffect(() => {
     if (!token) return;
 
-    // Refresh every 30 seconds silently
-    const interval = setInterval(() => {
-      fetchUserData(true); // silent refresh
-    }, 30000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchUserDataBackground();
+      }
+    };
 
-    return () => clearInterval(interval); // Clean up on unmount
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [token]);
 
   // Update profileData when userData changes
   useEffect(() => {
     if (userData) {
       updateProfileFromUserData(userData);
-      setLoading(false);
+      setIsInitialLoading(false);
     }
   }, [userData]);
 
   // Helper function to update profile data from user data
   const updateProfileFromUserData = (data) => {
-    // Handle events data which might be array of objects or array of IDs
     let eventsData = data.eventsJoined || [];
 
     // Make sure eventsJoined is an array
     if (!Array.isArray(eventsData)) {
       eventsData = [];
     }
+
+    // Debug log to verify points and volunteer hours
+    console.log(
+      `User data received - Points: ${data.points}, Hours: ${data.volunteerHours}`
+    );
 
     setProfileData({
       name: data.name || "",
@@ -88,15 +103,31 @@ const Profile = () => {
     });
   };
 
-  // Function to fetch user data
-  const fetchUserData = async (silent = false) => {
-    if (!silent) {
-      setLoading(true);
-      setRefreshing(true);
-    }
+  // Initial data fetch (with full loading indicator)
+  const fetchUserDataInitial = async () => {
+    setIsInitialLoading(true);
+    await fetchUserData();
+    setIsInitialLoading(false);
+  };
 
+  // User-triggered refresh (with refresh indicator)
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchUserData();
+    setIsRefreshing(false);
+  };
+
+  // Background refresh (no visible indicators)
+  const fetchUserDataBackground = async () => {
+    setIsBackgroundLoading(true);
+    await fetchUserData(false);
+    setIsBackgroundLoading(false);
+  };
+
+  // Core data fetching function
+  const fetchUserData = async (updateGlobalContext = true) => {
     try {
-      // Use axios instead of fetch for consistency
+      // fetching data of the user
       const response = await axios.get(`${backendUrl}/api/user/profile`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -106,10 +137,10 @@ const Profile = () => {
       const data = response.data;
 
       if (data.success && data.user) {
-        console.log("User profile data:", data.user);
+        // Log user data for debugging
+        console.log("Profile data received:", data.user);
 
         // Also fetch event details if user has joined events
-        // This helps get more details like title and date
         if (data.user.eventsJoined && data.user.eventsJoined.length > 0) {
           try {
             // Fetch all events and filter for the ones the user joined
@@ -148,25 +179,19 @@ const Profile = () => {
         // Reset error if successful
         setError("");
 
-        // Update global context
-        if (!silent) {
+        // Update global context if requested
+        if (updateGlobalContext) {
           loadUserProfileData();
         }
       }
     } catch (err) {
       console.error("Error fetching user data:", err);
-      if (!silent) {
-        setError("Failed to fetch user data. Please try again.");
-      }
-    } finally {
-      if (!silent) {
-        setLoading(false);
-        setRefreshing(false);
-      }
+      setError("Failed to fetch user data. Please try again.");
     }
   };
 
-  if (loading && !refreshing) {
+  // Show loading indicator when initially loading the profile
+  if (isInitialLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <FaSpinner className="animate-spin text-3xl text-blue-500 mr-2" />
@@ -190,13 +215,13 @@ const Profile = () => {
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">
-            {refreshing ? "Updating Profile..." : "Profile"}
+            {isRefreshing ? "Updating Profile..." : "Profile"}
           </h2>
           {!isEditing && (
             <button
               onClick={() => setIsEditing(true)}
               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-              disabled={refreshing}
+              disabled={isRefreshing}
             >
               Edit Profile
             </button>
@@ -320,7 +345,7 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Events Section - NEW! */}
+        {/* Events Section */}
         <div className="mt-8">
           <h3 className="text-xl font-semibold mb-4 flex items-center">
             <FaCalendarAlt className="mr-2 text-blue-500" /> Your Events
@@ -441,19 +466,19 @@ const Profile = () => {
         {/* Refresh Button */}
         <div className="mt-8 text-center border-t pt-6">
           <button
-            onClick={() => fetchUserData()}
-            disabled={refreshing}
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
             className={`
               px-6 py-2 rounded flex items-center justify-center mx-auto
               ${
-                refreshing
+                isRefreshing
                   ? "bg-gray-300 cursor-not-allowed"
                   : "bg-blue-600 text-white hover:bg-blue-700"
               }
             `}
           >
-            {refreshing && <FaSpinner className="animate-spin mr-2" />}
-            {refreshing ? "Refreshing Profile..." : "Refresh Profile Data"}
+            {isRefreshing && <FaSpinner className="animate-spin mr-2" />}
+            {isRefreshing ? "Refreshing Profile..." : "Refresh Profile Data"}
           </button>
         </div>
       </div>

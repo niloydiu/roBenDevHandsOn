@@ -1,21 +1,17 @@
 import React, { useContext, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Appcontext } from "../context/Appcontext";
 
 const Navbar = () => {
   const { token, userData, setToken } = useContext(Appcontext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation(); // Get the current route
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     setToken(false);
     navigate("/login");
   };
-
-  // Helper function to determine if a link is active
-  const isActive = (path) => location.pathname === path;
 
   return (
     <nav className="bg-primary text-gray-600 py-4 px-6 md:px-10 lg:px-20 rounded-lg shadow-lg mb-6">
@@ -28,45 +24,83 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link
+            <NavLink
               to="/"
-              className={`hover:text-blue-500 transition-colors ${
-                isActive("/") ? "text-blue-500 border-b-2 border-blue-500" : ""
-              }`}
+              className={({ isActive }) =>
+                `relative overflow-hidden py-2 px-3
+                hover:text-blue-500 transition-colors duration-300
+                before:absolute before:top-0 before:left-0 before:w-full before:h-full
+                before:bg-blue-100 before:opacity-50
+                before:transform before:translate-x-[-100%]
+                before:transition-transform before:duration-300 before:ease-in-out
+                hover:before:translate-x-[0%]
+                ${
+                  isActive
+                    ? "text-blue-500 font-bold border-b-2 border-blue-500"
+                    : ""
+                }`
+              }
             >
               Home
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               to="/events"
-              className={`hover:text-blue-500 transition-colors ${
-                isActive("/events")
-                  ? "text-blue-500 border-b-2 border-blue-500"
-                  : ""
-              }`}
+              className={({ isActive }) =>
+                `relative overflow-hidden py-2 px-3
+                hover:text-blue-500 transition-colors duration-300
+                before:absolute before:top-0 before:left-0 before:w-full before:h-full
+                before:bg-blue-100 before:opacity-50
+                before:transform before:translate-x-[-100%]
+                before:transition-transform before:duration-300 before:ease-in-out
+                hover:before:translate-x-[0%]
+                ${
+                  isActive
+                    ? "text-blue-500 font-bold border-b-2 border-blue-500"
+                    : ""
+                }`
+              }
             >
               Events
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               to="/community-help"
-              className={`hover:text-blue-500 transition-colors ${
-                isActive("/community-help")
-                  ? "text-blue-500 border-b-2 border-blue-500"
-                  : ""
-              }`}
+              className={({ isActive }) =>
+                `relative overflow-hidden py-2 px-3
+                hover:text-blue-500 transition-colors duration-300
+                before:absolute before:top-0 before:left-0 before:w-full before:h-full
+                before:bg-blue-100 before:opacity-50
+                before:transform before:translate-x-[-100%]
+                before:transition-transform before:duration-300 before:ease-in-out
+                hover:before:translate-x-[0%]
+                ${
+                  isActive
+                    ? "text-blue-500 font-bold border-b-2 border-blue-500"
+                    : ""
+                }`
+              }
             >
               Community Help
-            </Link>
+            </NavLink>
             {token && (
-              <Link
+              <NavLink
                 to="/teams"
-                className={`hover:text-blue-500 transition-colors ${
-                  isActive("/teams")
-                    ? "text-blue-500 border-b-2 border-blue-500"
-                    : ""
-                }`}
+                className={({ isActive }) =>
+                  `relative overflow-hidden py-2 px-3
+                  hover:text-blue-500 transition-colors duration-300
+                  before:absolute before:top-0 before:left-0 before:w-full before:h-full
+                  before:bg-blue-100 before:opacity-50
+                  before:transform before:translate-x-[-100%]
+                  before:transition-transform before:duration-300 before:ease-in-out
+                  hover:before:translate-x-[0%]
+                  ${
+                    isActive
+                      ? "text-blue-500 font-bold border-b-2 border-blue-500"
+                      : ""
+                  }`
+                }
               >
                 Teams
-              </Link>
+              </NavLink>
             )}
           </div>
 
@@ -142,73 +176,83 @@ const Navbar = () => {
               )}
             </button>
           </div>
-        </div>
 
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden mt-4 rounded-lg bg-gray-200 py-4">
-            <div className="flex flex-col space-y-3 px-4">
-              <Link
-                to="/"
-                className={`text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
-                  isActive("/") ? "text-blue-500 font-bold" : ""
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link
-                to="/events"
-                className={`text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
-                  isActive("/events") ? "text-blue-500 font-bold" : ""
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Events
-              </Link>
-              <Link
-                to="/community-help"
-                className={`text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
-                  isActive("/community-help") ? "text-blue-500 font-bold" : ""
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Community Help
-              </Link>
-              {token && (
-                <>
-                  <Link
-                    to="/teams"
-                    className={`text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
-                      isActive("/teams") ? "text-blue-500 font-bold" : ""
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Teams
-                  </Link>
-                  <Link
-                    to="/profile"
-                    className={`text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
-                      isActive("/profile") ? "text-blue-500 font-bold" : ""
-                    }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Profile
-                  </Link>
-                  <button
-                    onClick={() => {
-                      handleLogout();
-                      setIsMenuOpen(false);
-                    }}
-                    className="text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 text-left"
-                  >
-                    Logout
-                  </button>
-                </>
-              )}
+          {/* Mobile Menu */}
+          {isMenuOpen && (
+            <div className="md:hidden mt-4 rounded-lg bg-gray-200 py-4">
+              <div className="flex flex-col space-y-3 px-4">
+                <NavLink
+                  to="/"
+                  className={({ isActive }) =>
+                    `text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
+                      isActive ? "text-blue-500 font-bold" : ""
+                    }`
+                  }
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Home
+                </NavLink>
+                <NavLink
+                  to="/events"
+                  className={({ isActive }) =>
+                    `text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
+                      isActive ? "text-blue-500 font-bold" : ""
+                    }`
+                  }
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Events
+                </NavLink>
+                <NavLink
+                  to="/community-help"
+                  className={({ isActive }) =>
+                    `text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
+                      isActive ? "text-blue-500 font-bold" : ""
+                    }`
+                  }
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Community Help
+                </NavLink>
+                {token && (
+                  <>
+                    <NavLink
+                      to="/teams"
+                      className={({ isActive }) =>
+                        `text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
+                          isActive ? "text-blue-500 font-bold" : ""
+                        }`
+                      }
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Teams
+                    </NavLink>
+                    <NavLink
+                      to="/profile"
+                      className={({ isActive }) =>
+                        `text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
+                          isActive ? "text-blue-500 font-bold" : ""
+                        }`
+                      }
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Profile
+                    </NavLink>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setIsMenuOpen(false);
+                      }}
+                      className="text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 text-left"
+                    >
+                      Logout
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </nav>
   );
