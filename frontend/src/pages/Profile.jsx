@@ -29,10 +29,19 @@ const Profile = () => {
     events: [],
   });
 
+  // Form data for editing
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    email: "",
+    skills: "",
+    causes: "",
+  });
+
   // Separate loading states for different scenarios
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState("");
@@ -70,6 +79,18 @@ const Profile = () => {
       setIsInitialLoading(false);
     }
   }, [userData]);
+
+  // Initialize edit form when entering edit mode
+  useEffect(() => {
+    if (isEditing) {
+      setEditFormData({
+        name: profileData.name || "",
+        email: profileData.email || "",
+        skills: profileData.skills ? profileData.skills.join(", ") : "",
+        causes: profileData.causes ? profileData.causes.join(", ") : "",
+      });
+    }
+  }, [isEditing, profileData]);
 
   // Helper function to update profile data from user data
   const updateProfileFromUserData = (data) => {
@@ -190,6 +211,76 @@ const Profile = () => {
     }
   };
 
+  // Handle changes to form fields
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData({
+      ...editFormData,
+      [name]: value,
+    });
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setError("");
+
+    try {
+      // Convert comma-separated strings to arrays
+      const skills = editFormData.skills
+        .split(",")
+        .map((skill) => skill.trim())
+        .filter((skill) => skill !== "");
+
+      const causes = editFormData.causes
+        .split(",")
+        .map((cause) => cause.trim())
+        .filter((cause) => cause !== "");
+
+      // Prepare update data
+      const updateData = {
+        name: editFormData.name,
+        email: editFormData.email,
+        skills,
+        causes,
+      };
+
+      // Send update request - FIXED ENDPOINT HERE
+      const response = await axios.put(
+        `${backendUrl}/api/user/profile`, // Changed from "/api/user/update" to "/api/user/profile"
+        updateData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        // Update local state and global context
+        await fetchUserData(true);
+        setIsEditing(false);
+      } else {
+        setError(response.data.message || "Failed to update profile");
+      }
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      setError(
+        err.response?.data?.message ||
+          "Failed to update profile. Please try again."
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Cancel editing
+  const handleCancel = () => {
+    setIsEditing(false);
+    setError("");
+  };
+
   // Show loading indicator when initially loading the profile
   if (isInitialLoading) {
     return (
@@ -296,54 +387,141 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* User Info Display */}
+        {/* User Info Display/Edit Form */}
         <div className="mt-6 border-t pt-4">
           <h3 className="text-lg font-semibold mb-3">User Information</h3>
-          <p>
-            <strong>Name:</strong> {profileData.name}
-          </p>
-          <p>
-            <strong>Email:</strong> {profileData.email}
-          </p>
+
+          {isEditing ? (
+            <form onSubmit={handleSubmit}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={editFormData.name}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={editFormData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Skills (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    name="skills"
+                    value={editFormData.skills}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g. Cooking, Teaching, Carpentry"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Causes (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    name="causes"
+                    value={editFormData.causes}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g. Environment, Education, Elderly"
+                  />
+                </div>
+
+                <div className="flex space-x-4 pt-3">
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center"
+                    disabled={isSaving}
+                  >
+                    {isSaving && <FaSpinner className="animate-spin mr-2" />}
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100"
+                    disabled={isSaving}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </form>
+          ) : (
+            <>
+              <p>
+                <strong>Name:</strong> {profileData.name}
+              </p>
+              <p>
+                <strong>Email:</strong> {profileData.email}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Skills & Causes */}
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <h4 className="font-semibold mb-2">Skills</h4>
-            <div className="flex flex-wrap gap-2">
-              {profileData.skills && profileData.skills.length > 0 ? (
-                profileData.skills.map((skill, index) => (
-                  <span
-                    key={index}
-                    className="bg-gray-200 px-3 py-1 rounded-full text-sm"
-                  >
-                    {skill}
-                  </span>
-                ))
-              ) : (
-                <p className="text-gray-500">No skills added yet</p>
-              )}
+        {!isEditing && (
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h4 className="font-semibold mb-2">Skills</h4>
+              <div className="flex flex-wrap gap-2">
+                {profileData.skills && profileData.skills.length > 0 ? (
+                  profileData.skills.map((skill, index) => (
+                    <span
+                      key={index}
+                      className="bg-gray-200 px-3 py-1 rounded-full text-sm"
+                    >
+                      {skill}
+                    </span>
+                  ))
+                ) : (
+                  <p className="text-gray-500">No skills added yet</p>
+                )}
+              </div>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-2">Causes</h4>
+              <div className="flex flex-wrap gap-2">
+                {profileData.causes && profileData.causes.length > 0 ? (
+                  profileData.causes.map((cause, index) => (
+                    <span
+                      key={index}
+                      className="bg-gray-200 px-3 py-1 rounded-full text-sm"
+                    >
+                      {cause}
+                    </span>
+                  ))
+                ) : (
+                  <p className="text-gray-500">No causes added yet</p>
+                )}
+              </div>
             </div>
           </div>
-          <div>
-            <h4 className="font-semibold mb-2">Causes</h4>
-            <div className="flex flex-wrap gap-2">
-              {profileData.causes && profileData.causes.length > 0 ? (
-                profileData.causes.map((cause, index) => (
-                  <span
-                    key={index}
-                    className="bg-gray-200 px-3 py-1 rounded-full text-sm"
-                  >
-                    {cause}
-                  </span>
-                ))
-              ) : (
-                <p className="text-gray-500">No causes added yet</p>
-              )}
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Events Section */}
         <div className="mt-8">
@@ -464,23 +642,25 @@ const Profile = () => {
         </div>
 
         {/* Refresh Button */}
-        <div className="mt-8 text-center border-t pt-6">
-          <button
-            onClick={handleManualRefresh}
-            disabled={isRefreshing}
-            className={`
-              px-6 py-2 rounded flex items-center justify-center mx-auto
-              ${
-                isRefreshing
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
-              }
-            `}
-          >
-            {isRefreshing && <FaSpinner className="animate-spin mr-2" />}
-            {isRefreshing ? "Refreshing Profile..." : "Refresh Profile Data"}
-          </button>
-        </div>
+        {!isEditing && (
+          <div className="mt-8 text-center border-t pt-6">
+            <button
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              className={`
+                px-6 py-2 rounded flex items-center justify-center mx-auto
+                ${
+                  isRefreshing
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                }
+              `}
+            >
+              {isRefreshing && <FaSpinner className="animate-spin mr-2" />}
+              {isRefreshing ? "Refreshing Profile..." : "Refresh Profile Data"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
