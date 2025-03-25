@@ -321,7 +321,7 @@ export const leaveTeam = async (req, res) => {
   }
 };
 
-// update team info
+// update team info - FIXED VERSION
 export const updateTeam = async (req, res) => {
   try {
     // get ids and data
@@ -330,6 +330,7 @@ export const updateTeam = async (req, res) => {
     const { name, description, cause, isPublic, avatar } = req.body;
 
     console.log("User " + userId + " is updating team " + teamId);
+    console.log("Update data:", { name, description, cause, isPublic, avatar });
 
     // find team
     const team = await Team.findById(teamId);
@@ -347,14 +348,17 @@ export const updateTeam = async (req, res) => {
     }
 
     // check if user is admin
-    for (let i = 0; i < team.members.length; i++) {
-      const member = team.members[i];
-      if (
-        member.user.toString() === userId.toString() &&
-        member.role === "admin"
-      ) {
-        isAdmin = true;
-        break;
+    if (!isAdmin) {
+      for (let i = 0; i < team.members.length; i++) {
+        const member = team.members[i];
+        if (
+          member.user &&
+          member.user.toString() === userId.toString() &&
+          member.role === "admin"
+        ) {
+          isAdmin = true;
+          break;
+        }
       }
     }
 
@@ -365,16 +369,42 @@ export const updateTeam = async (req, res) => {
         .json({ message: "You don't have permission to update this team" });
     }
 
-    // update team info
+    // Prepare update object, only including fields that were provided
+    const updateData = {};
+
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (cause !== undefined) {
+      // Validate cause is in the allowed values
+      const validCauses = [
+        "environment",
+        "education",
+        "food",
+        "healthcare",
+        "animals",
+        "elderly",
+        "development",
+        "community",
+      ];
+      if (!validCauses.includes(cause.toLowerCase())) {
+        return res.status(400).json({
+          message: `Invalid cause. Must be one of: ${validCauses.join(", ")}`,
+        });
+      }
+      updateData.cause = cause.toLowerCase();
+    }
+    if (isPublic !== undefined) updateData.isPublic = Boolean(isPublic);
+    if (avatar !== undefined) updateData.avatar = avatar;
+
+    // Check if we have any data to update
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: "No valid update data provided" });
+    }
+
+    // update team info with better error handling
     const updatedTeam = await Team.findByIdAndUpdate(
       teamId,
-      {
-        name: name,
-        description: description,
-        cause: cause,
-        isPublic: isPublic,
-        avatar: avatar,
-      },
+      updateData,
       { new: true, runValidators: true } // return updated doc and validate
     );
 
@@ -384,8 +414,24 @@ export const updateTeam = async (req, res) => {
       team: updatedTeam,
     });
   } catch (error) {
-    console.log("ERROR in updateTeam:");
-    console.log(error);
+    console.log("ERROR in updateTeam:", error);
+    // Log more specific error details for debugging
+    if (error.name === "ValidationError") {
+      console.log("Validation error:", error.errors);
+      return res.status(400).json({
+        message: "Validation error",
+        errors: Object.keys(error.errors).reduce((acc, key) => {
+          acc[key] = error.errors[key].message;
+          return acc;
+        }, {}),
+      });
+    }
+    if (error.name === "CastError") {
+      console.log("Cast error:", error);
+      return res.status(400).json({
+        message: "Invalid ID format",
+      });
+    }
     res
       .status(500)
       .json({ message: "Error updating team", error: error.message });
@@ -462,7 +508,7 @@ export const getTeamLeaderboard = async (req, res) => {
     // get top teams sorted by hours and members
     const leaderboard = await Team.find()
       .sort({ hoursContributed: -1, memberCount: -1 }) // sort by most hours first, then members
-      .limit(10) // top 10 only
+      .limit(10) // top 10
       .populate("creator", "name email");
 
     console.log("Found " + leaderboard.length + " teams for leaderboard");
@@ -470,9 +516,8 @@ export const getTeamLeaderboard = async (req, res) => {
   } catch (error) {
     console.log("ERROR in getTeamLeaderboard:");
     console.log(error);
-    res.status(500).json({
-      message: "Error fetching team leaderboard",
-      error: error.message,
-    });
+    res
+      .status(500)
+      .json({ message: "Error fetching leaderboard", error: error.message });
   }
 };
