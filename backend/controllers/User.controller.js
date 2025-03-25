@@ -122,7 +122,8 @@ const userProfile = async (req, res) => {
     const user = await User.findById(req.user.id)
       .select("-password") // don't include password
       .populate("teams", "name avatar description cause memberCount")
-      .populate("eventsJoined", "title date location");
+      .populate("eventsJoined", "title date location")
+      .populate("pendingHours.event", "title date location"); // Added population for pending hours events
 
     if (!user) {
       console.log("No user found with that ID!");
@@ -182,5 +183,145 @@ const updateUser = async (req, res) => {
   }
 };
 
+// Get all pending hours (admin function)
+const getPendingHours = async (req, res) => {
+  try {
+    // Only admins or team leaders should access this
+    // TODO: Add role check here
+
+    // Get all users with pending hours
+    const users = await User.find({ "pendingHours.status": "pending" })
+      .select("name email pendingHours")
+      .populate("pendingHours.event");
+
+    res.status(200).json({
+      success: true,
+      pendingHours: users,
+    });
+  } catch (error) {
+    console.error("Error getting pending hours:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error retrieving pending hours",
+      error: error.message,
+    });
+  }
+};
+
+// Approve pending hours
+const approveHours = async (req, res) => {
+  try {
+    const { userId, pendingHourId } = req.params;
+    const approverId = req.user.id;
+
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Find the pending hour entry
+    const pendingHourEntry = user.pendingHours.id(pendingHourId);
+    if (!pendingHourEntry) {
+      return res.status(404).json({
+        success: false,
+        message: "Pending hour entry not found",
+      });
+    }
+
+    // Add the approver to verifications
+    pendingHourEntry.verifications.push(approverId);
+
+    // Update status to approved
+    pendingHourEntry.status = "approved";
+
+    // Add hours to user's total volunteer hours
+    user.volunteerHours = (user.volunteerHours || 0) + pendingHourEntry.hours;
+
+    // Award points (20 points per hour)
+    const pointsEarned = pendingHourEntry.hours * 20;
+    user.points = (user.points || 0) + pointsEarned;
+
+    // Save the user
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Hours approved and ${pointsEarned} points awarded`,
+      user: {
+        volunteerHours: user.volunteerHours,
+        points: user.points,
+        pendingHours: user.pendingHours,
+      },
+    });
+  } catch (error) {
+    console.error("Error approving hours:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error approving hours",
+      error: error.message,
+    });
+  }
+};
+
+// Reject pending hours
+const rejectHours = async (req, res) => {
+  try {
+    const { userId, pendingHourId } = req.params;
+    const reviewerId = req.user.id;
+
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Find the pending hour entry
+    const pendingHourEntry = user.pendingHours.id(pendingHourId);
+    if (!pendingHourEntry) {
+      return res.status(404).json({
+        success: false,
+        message: "Pending hour entry not found",
+      });
+    }
+
+    // Update status to rejected
+    pendingHourEntry.status = "rejected";
+
+    // Add the reviewer to verifications
+    pendingHourEntry.verifications.push(reviewerId);
+
+    // Save the user
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Hours have been rejected",
+      pendingHours: user.pendingHours,
+    });
+  } catch (error) {
+    console.error("Error rejecting hours:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error rejecting hours",
+      error: error.message,
+    });
+  }
+};
+
 // export all the functions
-export { loginUser, registerUser, updateUser, userProfile };
+export {
+  approveHours,
+  getPendingHours,
+  loginUser,
+  registerUser,
+  rejectHours,
+  updateUser,
+  userProfile,
+};

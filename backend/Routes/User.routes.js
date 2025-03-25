@@ -1,7 +1,10 @@
 import express from "express";
 import {
+  approveHours,
+  getPendingHours,
   loginUser,
   registerUser,
+  rejectHours,
   updateUser,
   userProfile,
 } from "../controllers/User.controller.js";
@@ -27,10 +30,13 @@ userRouter.get("/profile", authUser, userProfile);
 // this updates the user's profile data - PUT /api/user/profile
 userRouter.put("/profile", authUser, updateUser);
 
-// I might add more routes here later, like for password reset
+// Hours verification routes
+userRouter.get("/pending-hours", authUser, getPendingHours);
+userRouter.put("/approve-hours/:userId/:pendingHourId", authUser, approveHours);
+userRouter.put("/reject-hours/:userId/:pendingHourId", authUser, rejectHours);
 
 // making sure our routes are set up correctly
-console.log("User routes are ready! Total routes: 4");
+console.log("User routes are ready! Total routes: 7");
 
 // export so we can use in server.js
 export default userRouter;

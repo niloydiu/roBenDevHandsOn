@@ -23,10 +23,11 @@ const Profile = () => {
     eventsJoined: 0,
     helpRequested: 0,
     helpOffered: 0,
-    volunteerHours: 0, // Added to initial state
-    points: 0, // Added to initial state
+    volunteerHours: 0,
+    points: 0,
     teams: [],
     events: [],
+    pendingHours: [], // Added pendingHours to state
   });
 
   // Form data for editing
@@ -121,6 +122,7 @@ const Profile = () => {
       points: data.points || 0,
       teams: data.teams || [],
       events: eventsData,
+      pendingHours: data.pendingHours || [], // Added pendingHours
     });
   };
 
@@ -386,6 +388,55 @@ const Profile = () => {
             <div className="text-sm text-gray-600">Volunteer Hours</div>
           </div>
         </div>
+
+        {/* Pending Hours Section - NEW */}
+        {profileData.pendingHours && profileData.pendingHours.length > 0 && (
+          <div className="mt-6 border-t pt-4">
+            <h3 className="text-lg font-semibold mb-3">
+              Volunteer Hours Status
+            </h3>
+            <div className="space-y-3">
+              {profileData.pendingHours.map((pending) => (
+                <div
+                  key={pending._id}
+                  className={`p-3 rounded-lg border ${
+                    pending.status === "approved"
+                      ? "bg-green-50 border-green-200"
+                      : pending.status === "rejected"
+                      ? "bg-red-50 border-red-200"
+                      : "bg-yellow-50 border-yellow-200"
+                  }`}
+                >
+                  <div className="flex justify-between">
+                    <div>
+                      <p className="font-medium">
+                        {pending.event?.title || "Event"}
+                      </p>
+                      <p className="text-sm">
+                        {pending.hours} hours •{" "}
+                        {new Date(pending.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          pending.status === "approved"
+                            ? "bg-green-100 text-green-800"
+                            : pending.status === "rejected"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {pending.status.charAt(0).toUpperCase() +
+                          pending.status.slice(1)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* User Info Display/Edit Form */}
         <div className="mt-6 border-t pt-4">

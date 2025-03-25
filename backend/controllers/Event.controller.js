@@ -1,5 +1,4 @@
 import Event from "../models/Event.model.js";
-import Team from "../models/Team.model.js";
 import User from "../models/User.model.js";
 
 // this function creates a new event
@@ -378,7 +377,7 @@ export const deleteEvent = async (req, res) => {
   }
 };
 
-// New function to record volunteer hours and award points after completing an event
+// UPDATED: Modified to use pendingHours instead of directly adding hours
 export const completeEvent = async (req, res) => {
   try {
     const { eventId, hoursContributed } = req.body;
@@ -414,39 +413,31 @@ export const completeEvent = async (req, res) => {
       });
     }
 
-    // Update user's volunteer hours and points
+    // Find the user
     const user = await User.findById(userId);
 
-    // Initialize volunteerHours if it doesn't exist
-    user.volunteerHours = (user.volunteerHours || 0) + hours;
-
-    // Award points (20 points per hour volunteered)
-    const pointsEarned = hours * 20;
-    user.points = (user.points || 0) + pointsEarned;
+    // Add to pendingHours instead of directly to volunteerHours
+    user.pendingHours.push({
+      event: eventId,
+      hours: hours,
+      date: new Date(),
+      status: "pending",
+      verifications: [],
+    });
 
     await user.save();
 
-    console.log(
-      `User ${userId} recorded ${hours} volunteer hours for event ${eventId} and earned ${pointsEarned} points`
-    );
+    // If the event has a team, you could record this as pending for the team as well
+    // This is optional based on your requirements
 
-    // If the event is associated with a team, update team hours too
-    if (event.team) {
-      const team = await Team.findById(event.team);
-      if (team) {
-        team.hoursContributed = (team.hoursContributed || 0) + hours;
-        await team.save();
-        console.log(`Team ${event.team} hours increased by ${hours}`);
-      }
-    }
+    console.log(
+      `User ${userId} submitted ${hours} volunteer hours for event ${eventId} for approval`
+    );
 
     res.status(200).json({
       success: true,
-      message: `You've logged ${hours} volunteer hours and earned ${pointsEarned} points!`,
-      user: {
-        volunteerHours: user.volunteerHours,
-        points: user.points,
-      },
+      message: `You've logged ${hours} volunteer hours. They will be reviewed shortly!`,
+      pendingHours: user.pendingHours,
     });
   } catch (error) {
     console.error("Error completing event:", error);

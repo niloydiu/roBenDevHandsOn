@@ -3,6 +3,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 // Components
+import AdminPendingHours from "./components/AdminPendingHours";
 import EditEvent from "./components/EditEvent";
 import EventDetail from "./components/EventDetail";
 import Footer from "./components/Footer";
@@ -41,6 +42,8 @@ const App = () => {
           <Route path="/edit-team/:id" element={<TeamEdit />} />
           {/* Team creation route */}
           <Route path="/create-team" element={<Teams />} />
+          {/* Admin routes */}
+          <Route path="/admin/pending-hours" element={<AdminPendingHours />} />
         </Routes>
       </div>
       <Footer />
