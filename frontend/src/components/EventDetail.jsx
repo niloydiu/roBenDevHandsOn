@@ -182,17 +182,32 @@ function EventDetail() {
     maxParticipants > 0 ? (participantsCount / maxParticipants) * 100 : 0;
   const spotsRemaining = maxParticipants - participantsCount;
 
-  // Format date
-  const formattedDate = new Date(event.date).toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  // Format date with error handling
+  let formattedDate = "Date not available";
+  let eventDate = new Date();
+  let isEventPast = false;
 
-  // Check if event is in the past
-  const eventDate = new Date(event.date);
-  const isEventPast = eventDate < new Date();
+  try {
+    if (event.date) {
+      eventDate = new Date(event.date);
+
+      // Check if date is valid
+      if (!isNaN(eventDate.getTime())) {
+        formattedDate = eventDate.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+
+        isEventPast = eventDate < new Date();
+      } else {
+        console.warn("Invalid date format in event:", event.date);
+      }
+    }
+  } catch (error) {
+    console.warn("Error formatting event date:", error);
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">

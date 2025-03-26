@@ -32,13 +32,36 @@ function EditEvent() {
         setLoading(true);
         const response = await axios.get(`${backendUrl}/api/event/${id}`);
 
-        // Format the date for the input field (YYYY-MM-DD)
-        const eventDate = new Date(response.data.date);
-        const formattedDate = eventDate.toISOString().split("T")[0];
+        // Format the date for the input field with proper validation
+        let formattedDate = "";
+        if (response.data.event?.date) {
+          try {
+            const eventDate = new Date(response.data.event.date);
+
+            // Check if date is valid before formatting
+            if (!isNaN(eventDate.getTime())) {
+              formattedDate = eventDate.toISOString().split("T")[0];
+            } else {
+              console.warn(
+                "Invalid date format in event:",
+                response.data.event.date
+              );
+              formattedDate = ""; // Fallback to empty string
+            }
+          } catch (dateError) {
+            console.warn("Error parsing date:", dateError);
+          }
+        }
+
+        const eventToUpdate = response.data.event || response.data;
 
         setEventData({
-          ...response.data,
+          ...eventToUpdate,
           date: formattedDate,
+          // Ensure we have default values for optional fields
+          requirements: eventToUpdate.requirements || "",
+          organizer: eventToUpdate.organizer || "",
+          maxParticipants: eventToUpdate.maxParticipants || 10,
         });
       } catch (err) {
         console.error("Error fetching event details:", err);
