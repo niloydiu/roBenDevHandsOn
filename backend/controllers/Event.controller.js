@@ -1,9 +1,7 @@
 import Event from "../models/Event.model.js";
 import User from "../models/User.model.js";
 
-// this function creates a new event
 export const createEvent = async (req, res) => {
-  // getting all the data from request body
   const {
     title,
     description,
@@ -17,13 +15,11 @@ export const createEvent = async (req, res) => {
   } = req.body;
 
   try {
-    // checking if user is logged in
     const userId = req.user.id;
     if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    // making new event object
     const newEvent = new Event({
       title,
       description,
@@ -37,26 +33,21 @@ export const createEvent = async (req, res) => {
       createdBy: userId,
     });
 
-    // save to database
     await newEvent.save();
 
-    // increase user's event count by 1
     await User.findByIdAndUpdate(
       userId,
       { $inc: { eventsCreated: 1 } },
       { new: true }
     );
 
-    // send back success message
     res.status(201).json({
       success: true,
       message: "Event created successfully",
       event: newEvent,
     });
   } catch (error) {
-    // if there's an error, log it
     console.error("Error creating event:", error);
-    // return error message
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -65,38 +56,30 @@ export const createEvent = async (req, res) => {
   }
 };
 
-// gets all events from database
 export const getAllEvents = async (req, res) => {
   try {
-    // get all events and include creator info
     const events = await Event.find()
       .populate("createdBy", "name email")
-      .sort({ date: 1 }); // Sort by date ascending (upcoming first)
+      .sort({ date: 1 });
 
-    // return events - UPDATED to include success flag and put events in an object
     res.status(200).json({
       success: true,
       events: events,
     });
   } catch (error) {
-    // if error happens
     console.error("Error fetching events:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
-// get single event by ID
 export const getEventById = async (req, res) => {
   try {
-    // get event id from url
     const eventId = req.params.id;
 
-    // find event in database with that id
     const event = await Event.findById(eventId)
       .populate("createdBy", "name email")
       .populate("participants", "name email");
 
-    // check if event exists
     if (!event) {
       return res.status(404).json({
         success: false,
@@ -104,13 +87,11 @@ export const getEventById = async (req, res) => {
       });
     }
 
-    // return event with success flag
     res.status(200).json({
       success: true,
       event: event,
     });
   } catch (error) {
-    // log error and return error message
     console.error("Error fetching event by ID:", error);
     res.status(500).json({
       success: false,
@@ -120,14 +101,11 @@ export const getEventById = async (req, res) => {
   }
 };
 
-// lets a user join an event
 export const joinEvent = async (req, res) => {
   try {
-    // get event id and user id
     const eventId = req.params.id;
     const userId = req.user.id;
 
-    // find the event
     const event = await Event.findById(eventId);
     if (!event) {
       return res.status(404).json({
@@ -136,7 +114,6 @@ export const joinEvent = async (req, res) => {
       });
     }
 
-    // check if user already joined - this prevents duplicate entries
     let alreadyJoined = false;
     for (let i = 0; i < event.participants.length; i++) {
       if (event.participants[i].toString() === userId.toString()) {
@@ -145,7 +122,6 @@ export const joinEvent = async (req, res) => {
       }
     }
 
-    // if already joined, return error
     if (alreadyJoined) {
       return res.status(400).json({
         success: false,
@@ -153,7 +129,6 @@ export const joinEvent = async (req, res) => {
       });
     }
 
-    // check if event is full
     if (
       event.maxParticipants &&
       event.participants.length >= event.maxParticipants
@@ -164,32 +139,22 @@ export const joinEvent = async (req, res) => {
       });
     }
 
-    // add user to event
     event.participants.push(userId);
     await event.save();
 
-    // add event to user and award points
     const user = await User.findById(userId);
 
-    // Initialize eventsJoined array if it doesn't exist
     if (!user.eventsJoined) {
       user.eventsJoined = [];
     }
 
-    // Add the event
     user.eventsJoined.push(eventId);
 
-    // Award points (10 points for joining an event)
     const pointsToAward = 10;
     user.points = (user.points || 0) + pointsToAward;
 
     await user.save();
 
-    console.log(
-      `User ${userId} joined event ${eventId} and earned ${pointsToAward} points`
-    );
-
-    // return success with updated event
     res.status(200).json({
       success: true,
       message: `Successfully joined event and earned ${pointsToAward} points!`,
@@ -197,7 +162,6 @@ export const joinEvent = async (req, res) => {
       points: user.points,
     });
   } catch (error) {
-    // if error
     console.error("Error joining event:", error);
     res.status(500).json({
       success: false,
@@ -207,14 +171,11 @@ export const joinEvent = async (req, res) => {
   }
 };
 
-// lets user leave an event they joined
 export const leaveEvent = async (req, res) => {
   try {
-    // get event id and user id
     const eventId = req.params.id;
     const userId = req.user.id;
 
-    // find event
     const event = await Event.findById(eventId);
     if (!event) {
       return res.status(404).json({
@@ -223,7 +184,6 @@ export const leaveEvent = async (req, res) => {
       });
     }
 
-    // check if user is in the event
     let isInEvent = false;
     for (let i = 0; i < event.participants.length; i++) {
       if (event.participants[i].toString() === userId.toString()) {
@@ -232,7 +192,6 @@ export const leaveEvent = async (req, res) => {
       }
     }
 
-    // if not in event, return error
     if (!isInEvent) {
       return res.status(400).json({
         success: false,
@@ -240,20 +199,17 @@ export const leaveEvent = async (req, res) => {
       });
     }
 
-    // remove user from event participants
     event.participants = event.participants.filter(
       (participant) => participant.toString() !== userId.toString()
     );
     await event.save();
 
-    // remove event from user's joined events
     await User.findByIdAndUpdate(
       userId,
       { $pull: { eventsJoined: eventId } },
       { new: true }
     );
 
-    // return success with updated event
     res.status(200).json({
       success: true,
       message: "Successfully left event",

@@ -122,7 +122,7 @@ const Profile = () => {
       points: data.points || 0,
       teams: data.teams || [],
       events: eventsData,
-      pendingHours: data.pendingHours || [], // Added pendingHours
+      pendingHours: data.pendingHours || [],
     });
   };
 
