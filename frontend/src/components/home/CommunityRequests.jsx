@@ -1,6 +1,9 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Appcontext } from "../../context/Appcontext";
+import { motion } from "framer-motion";
+import { HiOutlineLocationMarker, HiOutlineUser, HiOutlineChevronRight, HiOutlineClock } from "react-icons/hi";
+import { toast } from "react-toastify";
 
 const CommunityRequests = () => {
   const navigate = useNavigate();
@@ -9,242 +12,119 @@ const CommunityRequests = () => {
     loadingHelpRequests,
     isLoggedIn,
     offerHelp,
-    userData,
-    deleteHelpRequest,
     hasUserOfferedHelp,
     fetchAllHelpRequests,
   } = useContext(Appcontext);
 
-  // Add state to track when operations are in progress
   const [processingRequest, setProcessingRequest] = useState(null);
-  const [lastUpdate, setLastUpdate] = useState(Date.now());
 
-  // Add effect to refresh data periodically or after operations
   useEffect(() => {
-    // Initial fetch on component mount
     fetchAllHelpRequests();
-
-    // Refresh data every 30 seconds
-    const interval = setInterval(() => {
-      fetchAllHelpRequests();
-    }, 30000);
-
+    const interval = setInterval(() => fetchAllHelpRequests(), 30000);
     return () => clearInterval(interval);
-  }, [lastUpdate]);
+  }, []);
 
-  // Get urgency level badge class
-  const getUrgencyBadgeClass = (level) => {
-    switch (level) {
-      case "urgent":
-        return "bg-red-600 text-white";
-      case "medium":
-        return "bg-yellow-500 text-white";
-      case "low":
-        return "bg-blue-500 text-white";
-      default:
-        return "bg-gray-500 text-white";
-    }
-  };
-
-  // Check if a request was created by the current user
-  const isUserRequest = (request) => {
-    return isLoggedIn && userData && request.createdBy?._id === userData._id;
-  };
-
-  // Handle offer help button click
-  const handleOfferHelpClick = async (requestId) => {
+  const handleOfferHelpClick = async (e, requestId) => {
+    e.stopPropagation();
     if (!isLoggedIn) {
-      navigate("/signup"); // Redirect to signup if the user is not logged in
+      navigate("/signup");
       return;
     }
-
     try {
-      // Show processing state
       setProcessingRequest(requestId);
-
-      // Call the API
       const result = await offerHelp(requestId);
-
-      // Show result
-      alert(result.message);
-
-      // Trigger a refresh of data by updating lastUpdate
-      setLastUpdate(Date.now());
+      toast.success(result.message);
+      fetchAllHelpRequests();
     } catch (error) {
-      console.error("Error offering help:", error);
-      alert("Failed to process your request. Please try again.");
+      toast.error("Process failed");
     } finally {
-      // Clear processing state
       setProcessingRequest(null);
     }
   };
 
-  // Handle delete help request button click
-  const handleDeleteHelpRequest = async (requestId) => {
-    if (confirm("Are you sure you want to delete this help request?")) {
-      try {
-        // Show processing state
-        setProcessingRequest(requestId);
-
-        // Call the API
-        const result = await deleteHelpRequest(requestId);
-
-        // Show result
-        alert(result.message);
-
-        // Trigger a refresh of data
-        setLastUpdate(Date.now());
-      } catch (error) {
-        console.error("Error deleting help request:", error);
-        alert("Failed to delete the help request. Please try again.");
-      } finally {
-        // Clear processing state
-        setProcessingRequest(null);
-      }
-    }
-  };
-
-  // Display only the first 3 help requests for the homepage
   const displayRequests = helpRequests.slice(0, 3);
 
+  if (loadingHelpRequests) return (
+    <div className="space-y-4">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="h-32 bg-slate-100 animate-pulse rounded-[32px]" />
+      ))}
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
-      {loadingHelpRequests ? (
-        <div className="text-center py-8">
-          <div className="animate-spin inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
-          <p className="inline-block">Loading requests...</p>
-        </div>
-      ) : displayRequests.length === 0 ? (
-        <div className="text-center py-8 bg-gray-100 rounded-lg">
-          <p>No help requests found. Be the first to create one!</p>
-        </div>
-      ) : (
-        displayRequests.map((request) => (
-          <div key={request._id} className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-start">
-              <h3 className="text-xl font-semibold mb-2">{request.title}</h3>
-              <span
-                className={`px-3 py-1 text-sm rounded-full ${getUrgencyBadgeClass(
-                  request.urgencyLevel
-                )}`}
-              >
-                {request.urgencyLevel.charAt(0).toUpperCase() +
-                  request.urgencyLevel.slice(1)}
+    <div className="space-y-4">
+      {displayRequests.length > 0 ? displayRequests.map((request, idx) => (
+        <motion.div
+          key={request._id}
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: idx * 0.1 }}
+          onClick={() => navigate("/community-help")}
+          className="group cursor-pointer bg-white rounded-[32px] p-6 border border-slate-100 hover:border-blue-100 hover:shadow-xl hover:shadow-blue-500/5 transition-all"
+        >
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex items-center gap-2">
+              <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                request.urgencyLevel === 'urgent' ? 'bg-rose-50 text-rose-600 border-rose-100' : 
+                request.urgencyLevel === 'medium' ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                'bg-emerald-50 text-emerald-600 border-emerald-100'
+              }`}>
+                {request.urgencyLevel}
+              </span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                <HiOutlineClock /> {new Date(request.createdAt).toLocaleDateString()}
               </span>
             </div>
-            <p className="mb-3 text-gray-600">{request.description}</p>
-            <div className="flex flex-wrap gap-4 mb-4 text-sm">
-              <div className="flex items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4 mr-1"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                <span>{request.location}</span>
-              </div>
-              <div className="flex items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4 mr-1"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                  />
-                </svg>
-                <span>{request.category}</span>
-              </div>
-              <div className="flex items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4 mr-1"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-                <span>
-                  {request.createdBy?.name || "Anonymous"}
-                  {isUserRequest(request) && " (You)"}
-                </span>
-              </div>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm">
-                <strong>{request.offers}</strong> people have offered to help
-              </span>
-              {isUserRequest(request) ? (
-                <button
-                  onClick={() => handleDeleteHelpRequest(request._id)}
-                  disabled={processingRequest === request._id}
-                  className={`bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm ${
-                    processingRequest === request._id ? "opacity-70" : ""
-                  }`}
-                >
-                  {processingRequest === request._id
-                    ? "Processing..."
-                    : "Delete Request"}
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleOfferHelpClick(request._id)}
-                  disabled={processingRequest === request._id}
-                  className={`${
-                    hasUserOfferedHelp(request._id)
-                      ? "bg-orange-500 hover:bg-orange-600"
-                      : "bg-green-600 hover:bg-green-700"
-                  } text-white px-4 py-2 rounded-md text-sm ${
-                    processingRequest === request._id ? "opacity-70" : ""
-                  }`}
-                >
-                  {processingRequest === request._id
-                    ? "Processing..."
-                    : isLoggedIn
-                    ? hasUserOfferedHelp(request._id)
-                      ? "Withdraw Offer"
-                      : "Offer Help"
-                    : "Sign Up to Help"}
-                </button>
-              )}
+            <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 bg-slate-50 px-3 py-1 rounded-full">
+               {request.offers} <span className="text-slate-400 font-bold uppercase text-[9px]">Offers</span>
             </div>
           </div>
-        ))
-      )}
-      {helpRequests.length > 3 && (
-        <div className="text-center mt-4">
-          <button
-            onClick={() => navigate("/community-help")}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            View All Help Requests
-          </button>
+
+          <h3 className="text-lg font-black text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
+            {request.title}
+          </h3>
+
+          <div className="flex items-center justify-between mt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+                <HiOutlineLocationMarker className="text-blue-500" />
+                {request.location}
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+                <HiOutlineUser className="text-indigo-500" />
+                {request.createdBy?.name || "Anonymous"}
+              </div>
+            </div>
+
+            <button
+              onClick={(e) => handleOfferHelpClick(e, request._id)}
+              disabled={processingRequest === request._id}
+              className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all ${
+                hasUserOfferedHelp(request._id)
+                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20"
+                  : "bg-slate-900 text-white hover:bg-blue-600 shadow-xl shadow-slate-900/10 active:scale-95"
+              }`}
+            >
+              {processingRequest === request._id ? "..." : hasUserOfferedHelp(request._id) ? "Help Offered" : "Lend Hand"}
+            </button>
+          </div>
+        </motion.div>
+      )) : (
+        <div className="py-12 text-center bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200">
+          <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">Quiet Neighborhood</p>
         </div>
+      )}
+
+      {helpRequests.length > 3 && (
+        <motion.button
+          whileHover={{ x: 5 }}
+          onClick={() => navigate("/community-help")}
+          className="w-full py-4 flex items-center justify-center gap-2 text-sm font-black text-slate-400 hover:text-blue-600 transition-all uppercase tracking-widest"
+        >
+          View All Requests <HiOutlineChevronRight size={18} />
+        </motion.button>
       )}
     </div>
   );

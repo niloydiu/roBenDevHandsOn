@@ -1,11 +1,25 @@
-import React, { useContext, useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import React, { useContext, useState, useEffect } from "react";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { Appcontext } from "../context/Appcontext";
+import { motion, AnimatePresence } from "framer-motion";
+import { HiOutlineMenuAlt3, HiOutlineX, HiOutlineUser, HiOutlineLogout, HiOutlineLogin } from "react-icons/hi";
 
 const Navbar = () => {
   const { token, userData, setToken } = useContext(Appcontext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -13,247 +27,154 @@ const Navbar = () => {
     navigate("/login");
   };
 
+  const navLinks = [
+    { name: "Feed", path: "/" },
+    { name: "Events", path: "/events" },
+    { name: "Action", path: "/community-help" },
+    ...(token ? [{ name: "Teams", path: "/teams" }] : []),
+  ];
+
   return (
-    <nav className="bg-primary text-gray-600 py-4 px-6 md:px-10 lg:px-20 rounded-lg shadow-lg mb-6">
-      <div className="container mx-auto">
-        <div className="flex justify-between items-center">
+    <nav className={`fixed top-0 left-0 w-full z-[100] transition-all duration-500 ${scrolled ? 'py-4' : 'py-6'}`}>
+      <div className="container mx-auto px-4 md:px-10 lg:px-20">
+        <div className={`relative flex justify-between items-center transition-all duration-500 rounded-[32px] px-8 py-4 ${scrolled ? 'bg-white shadow-2xl shadow-slate-200/50' : 'bg-white/50 backdrop-blur-md border border-white/20 shadow-sm'}`}>
+          
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3">
-            <span className="text-2xl font-bold">HandsOn</span>
+          <Link to="/" className="flex items-center gap-2 group">
+            <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl group-hover:bg-blue-600 transition-colors">
+              H
+            </div>
+            <span className="text-xl font-black text-slate-900 tracking-tighter">HandsOn</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <NavLink
-              to="/"
-              className={({ isActive }) =>
-                `relative overflow-hidden py-2 px-3
-                hover:text-blue-500 transition-colors duration-300
-                before:absolute before:top-0 before:left-0 before:w-full before:h-full
-                before:bg-blue-100 before:opacity-50
-                before:transform before:translate-x-[-100%]
-                before:transition-transform before:duration-300 before:ease-in-out
-                hover:before:translate-x-[0%]
-                ${
-                  isActive
-                    ? "text-blue-500 font-bold border-b-2 border-blue-500"
-                    : ""
-                }`
-              }
-            >
-              Home
-            </NavLink>
-            <NavLink
-              to="/events"
-              className={({ isActive }) =>
-                `relative overflow-hidden py-2 px-3
-                hover:text-blue-500 transition-colors duration-300
-                before:absolute before:top-0 before:left-0 before:w-full before:h-full
-                before:bg-blue-100 before:opacity-50
-                before:transform before:translate-x-[-100%]
-                before:transition-transform before:duration-300 before:ease-in-out
-                hover:before:translate-x-[0%]
-                ${
-                  isActive
-                    ? "text-blue-500 font-bold border-b-2 border-blue-500"
-                    : ""
-                }`
-              }
-            >
-              Events
-            </NavLink>
-            <NavLink
-              to="/community-help"
-              className={({ isActive }) =>
-                `relative overflow-hidden py-2 px-3
-                hover:text-blue-500 transition-colors duration-300
-                before:absolute before:top-0 before:left-0 before:w-full before:h-full
-                before:bg-blue-100 before:opacity-50
-                before:transform before:translate-x-[-100%]
-                before:transition-transform before:duration-300 before:ease-in-out
-                hover:before:translate-x-[0%]
-                ${
-                  isActive
-                    ? "text-blue-500 font-bold border-b-2 border-blue-500"
-                    : ""
-                }`
-              }
-            >
-              Community Help
-            </NavLink>
-            {token && (
+          <div className="hidden md:flex items-center gap-1.5">
+            {navLinks.map((link) => (
               <NavLink
-                to="/teams"
-                className={({ isActive }) =>
-                  `relative overflow-hidden py-2 px-3
-                  hover:text-blue-500 transition-colors duration-300
-                  before:absolute before:top-0 before:left-0 before:w-full before:h-full
-                  before:bg-blue-100 before:opacity-50
-                  before:transform before:translate-x-[-100%]
-                  before:transition-transform before:duration-300 before:ease-in-out
-                  hover:before:translate-x-[0%]
-                  ${
-                    isActive
-                      ? "text-blue-500 font-bold border-b-2 border-blue-500"
-                      : ""
-                  }`
-                }
+                key={link.path}
+                to={link.path}
+                className={({ isActive }) => `
+                  px-5 py-2.5 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all
+                  ${isActive ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}
+                `}
               >
-                Teams
+                {link.name}
               </NavLink>
-            )}
+            ))}
           </div>
 
-          {/* Auth Buttons (Desktop) */}
-          <div className="hidden md:flex items-center space-x-4">
+          {/* Auth Buttons */}
+          <div className="hidden md:flex items-center gap-4">
             {token ? (
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center gap-3">
                 <Link
                   to="/profile"
-                  className="flex items-center space-x-2 group"
+                  className="flex items-center gap-3 px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-all border border-slate-100 group"
                 >
-                  <span className="text-lg font-semibold text-gray-600">
-                    {userData?.name || "User"}
-                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs uppercase overflow-hidden">
+                    {userData?.avatar ? <img src={userData.avatar} className="w-full h-full object-cover" /> : userData?.name?.charAt(0) || <HiOutlineUser />}
+                  </div>
+                  <span className="text-sm font-black text-slate-900 tracking-tight">{userData?.name?.split(' ')[0] || "Profile"}</span>
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="px-5 py-2 bg-white text-primary rounded-full font-medium hover:scale-105 transition-all duration-300"
+                  className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                  title="Logout"
                 >
-                  Logout
+                  <HiOutlineLogout size={20} />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center gap-3">
                 <Link
                   to="/login"
-                  className="px-5 py-2 border border-white text-gray-600 rounded-full hover:bg-white hover:text-primary hover:scale-105 transition-all duration-300"
+                  className="px-6 py-2.5 text-slate-500 hover:text-slate-900 font-black text-[13px] uppercase tracking-widest transition-all"
                 >
                   Login
                 </Link>
                 <Link
                   to="/signup"
-                  className="px-5 py-2 bg-white text-primary rounded-full hover:scale-105 transition-all duration-300"
+                  className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-[13px] uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all"
                 >
-                  Sign Up
+                  Join Now
                 </Link>
               </div>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-600 focus:outline-none"
-            >
-              {isMenuOpen ? (
-                <svg
-                  className="w-6 h-6"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  ></path>
-                </svg>
-              ) : (
-                <svg
-                  className="w-6 h-6"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
-                    clipRule="evenodd"
-                  ></path>
-                </svg>
-              )}
-            </button>
-          </div>
+          {/* Mobile Toggle */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-900 rounded-2xl transition-all active:scale-95"
+          >
+            {isMenuOpen ? <HiOutlineX size={24} /> : <HiOutlineMenuAlt3 size={24} />}
+          </button>
+        </div>
+      </div>
 
-          {/* Mobile Menu */}
-          {isMenuOpen && (
-            <div className="md:hidden mt-4 rounded-lg bg-gray-200 py-4">
-              <div className="flex flex-col space-y-3 px-4">
-                <NavLink
-                  to="/"
-                  className={({ isActive }) =>
-                    `text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
-                      isActive ? "text-blue-500 font-bold" : ""
-                    }`
-                  }
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Home
-                </NavLink>
-                <NavLink
-                  to="/events"
-                  className={({ isActive }) =>
-                    `text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
-                      isActive ? "text-blue-500 font-bold" : ""
-                    }`
-                  }
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Events
-                </NavLink>
-                <NavLink
-                  to="/community-help"
-                  className={({ isActive }) =>
-                    `text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
-                      isActive ? "text-blue-500 font-bold" : ""
-                    }`
-                  }
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Community Help
-                </NavLink>
-                {token && (
-                  <>
-                    <NavLink
-                      to="/teams"
-                      className={({ isActive }) =>
-                        `text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
-                          isActive ? "text-blue-500 font-bold" : ""
-                        }`
-                      }
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Teams
-                    </NavLink>
-                    <NavLink
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed inset-x-4 top-24 z-[99] md:hidden"
+          >
+            <div className="bg-white rounded-[32px] p-6 shadow-2xl border border-slate-100 overflow-hidden">
+              <div className="flex flex-col gap-2">
+                {navLinks.map((link) => (
+                  <NavLink
+                    key={link.path}
+                    to={link.path}
+                    className={({ isActive }) => `
+                      px-6 py-4 rounded-[20px] text-sm font-black uppercase tracking-widest transition-all flex items-center justify-between
+                      ${isActive ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-slate-600 hover:bg-slate-50'}
+                    `}
+                  >
+                    {link.name}
+                    {link.path === location.pathname && <div className="w-1.5 h-1.5 rounded-full bg-blue-600 shadow-lg shadow-blue-400" />}
+                  </NavLink>
+                ))}
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-slate-50">
+                {token ? (
+                  <div className="space-y-3">
+                    <Link
                       to="/profile"
-                      className={({ isActive }) =>
-                        `text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 ${
-                          isActive ? "text-blue-500 font-bold" : ""
-                        }`
-                      }
-                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center justify-between px-6 py-4 bg-slate-900 text-white rounded-[24px] font-black text-sm uppercase tracking-widest"
                     >
-                      Profile
-                    </NavLink>
+                      My Dashboard <HiOutlineUser size={18} />
+                    </Link>
                     <button
-                      onClick={() => {
-                        handleLogout();
-                        setIsMenuOpen(false);
-                      }}
-                      className="text-gray-600 py-2 hover:text-blue-500 hover:bg-gray-300 rounded-lg px-3 text-left"
+                      onClick={handleLogout}
+                      className="w-full px-6 py-4 text-red-500 font-black text-sm uppercase tracking-widest hover:bg-red-50 rounded-[24px] transition-all"
                     >
-                      Logout
+                      Sign Out
                     </button>
-                  </>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Link
+                      to="/login"
+                      className="px-6 py-4 text-center text-slate-600 font-black text-xs uppercase tracking-widest bg-slate-50 rounded-[20px]"
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      to="/signup"
+                      className="px-6 py-4 text-center bg-blue-600 text-white font-black text-xs uppercase tracking-widest rounded-[20px]"
+                    >
+                      Sign Up
+                    </Link>
+                  </div>
                 )}
               </div>
             </div>
-          )}
-        </div>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };

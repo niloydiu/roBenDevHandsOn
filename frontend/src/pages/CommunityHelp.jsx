@@ -1,6 +1,20 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Appcontext } from "../context/Appcontext";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  HiOutlinePlus, 
+  HiOutlineFilter, 
+  HiOutlineLocationMarker, 
+  HiOutlineUser, 
+  HiOutlinePhone, 
+  HiOutlineClock, 
+  HiOutlineTrash,
+  HiOutlineHeart,
+  HiOutlineGlobeAlt,
+  HiX
+} from "react-icons/hi";
+import { toast } from "react-toastify";
 
 function CommunityHelp() {
   const navigate = useNavigate();
@@ -17,10 +31,9 @@ function CommunityHelp() {
   } = useContext(Appcontext);
 
   const [filteredRequests, setFilteredRequests] = useState([]);
-  // Add state to track processing requests
   const [processingRequest, setProcessingRequest] = useState(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
   const [newRequest, setNewRequest] = useState({
     title: "",
     description: "",
@@ -33,496 +46,356 @@ function CommunityHelp() {
   const [filters, setFilters] = useState({
     urgency: "all",
     category: "all",
-    showMyRequests: false, // New filter for user's own requests
+    showMyRequests: false,
   });
 
-  // Fetch help requests when component mounts or refreshTrigger changes
   useEffect(() => {
-    console.log("Fetching help requests on mount or refresh trigger change");
     fetchAllHelpRequests();
-  }, [refreshTrigger]); // Refresh when trigger changes
+  }, []);
 
-  // Update filtered requests whenever help requests change
   useEffect(() => {
-    console.log("Filtering help requests...", helpRequests?.length || 0);
-    if (helpRequests && helpRequests.length > 0) {
-      filterRequests(filters);
-    } else {
-      setFilteredRequests([]);
+    if (helpRequests && Array.isArray(helpRequests)) {
+      let filtered = [...helpRequests];
+      if (filters.urgency !== "all") filtered = filtered.filter(r => r.urgencyLevel === filters.urgency);
+      if (filters.category !== "all") filtered = filtered.filter(r => r.category?.toLowerCase() === filters.category.toLowerCase());
+      if (filters.showMyRequests && isLoggedIn && userData) filtered = filtered.filter(r => r.createdBy?._id === userData._id);
+      setFilteredRequests(filtered);
     }
-  }, [helpRequests, userData, filters]); // Added filters as dependency
+  }, [helpRequests, userData, filters, isLoggedIn]);
 
-  // Function to handle input changes for the new request form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewRequest((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setNewRequest(prev => ({ ...prev, [name]: value }));
   };
 
-  // Function to handle form submission for new help request
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!isLoggedIn) {
-      navigate("/signup"); // Redirect to signup if the user is not logged in
-      return;
-    }
+    if (!isLoggedIn) return navigate("/signup");
 
     try {
       const result = await createHelpRequest(newRequest);
-
       if (result.success) {
-        // Reset the form
-        setNewRequest({
-          title: "",
-          description: "",
-          location: "",
-          urgencyLevel: "medium",
-          category: "general",
-          contactInfo: "",
-        });
-
-        alert(result.message);
-        // Force refresh
-        setRefreshTrigger((prev) => prev + 1);
+        setNewRequest({ title: "", description: "", location: "", urgencyLevel: "medium", category: "general", contactInfo: "" });
+        setIsModalOpen(false);
+        toast.success("Request published to community");
+        fetchAllHelpRequests();
       } else {
-        alert(result.message);
+        toast.error(result.message);
       }
     } catch (error) {
-      console.error("Error creating help request:", error);
-      alert("Failed to create help request. Please try again.");
+      toast.error("Failed to broadcast request");
     }
   };
 
-  // Function to handle offering help
   const handleOfferHelpClick = async (requestId) => {
-    if (!isLoggedIn) {
-      navigate("/signup"); // Redirect to signup if the user is not logged in
-      return;
-    }
-
+    if (!isLoggedIn) return navigate("/signup");
+    setProcessingRequest(requestId);
     try {
-      setProcessingRequest(requestId);
       const result = await offerHelp(requestId);
-      alert(result.message);
-
-      // Force refresh after operation completes
-      setRefreshTrigger((prev) => prev + 1);
+      toast.success(result.message);
+      fetchAllHelpRequests();
     } catch (error) {
-      console.error("Error with help offer:", error);
-      alert("Failed to process your request. Please try again.");
+      toast.error("Process failed");
     } finally {
       setProcessingRequest(null);
     }
   };
 
-  // Function to handle deleting a help request
-  const handleDeleteHelpRequest = async (requestId) => {
-    if (confirm("Are you sure you want to delete this help request?")) {
-      try {
-        setProcessingRequest(requestId);
-        const result = await deleteHelpRequest(requestId);
-        alert(result.message);
-
-        // Force refresh after deletion
-        setRefreshTrigger((prev) => prev + 1);
-      } catch (error) {
-        console.error("Error deleting help request:", error);
-        alert("Failed to delete the help request. Please try again.");
-      } finally {
-        setProcessingRequest(null);
-      }
+  const handleDelete = async (requestId) => {
+    setProcessingRequest(requestId);
+    try {
+      const result = await deleteHelpRequest(requestId);
+      toast.success(result.message);
+      fetchAllHelpRequests();
+    } catch (error) {
+      toast.error("Deletion failed");
+    } finally {
+      setProcessingRequest(null);
     }
   };
 
-  // Function to handle filter changes
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-
-    const newFilters = {
-      ...filters,
-      [name]: value,
+  const UrgencyBadge = ({ level }) => {
+    const colors = {
+      urgent: "bg-rose-100 text-rose-600 border-rose-200",
+      medium: "bg-amber-100 text-amber-600 border-amber-200",
+      low: "bg-emerald-100 text-emerald-600 border-emerald-200"
     };
-
-    setFilters(newFilters);
-    // We don't need to call filterRequests here since useEffect will handle it
-  };
-
-  // Function to toggle the "My Requests" filter
-  const handleMyRequestsToggle = () => {
-    // Toggle based on current state
-    const newFilters = {
-      ...filters,
-      showMyRequests: !filters.showMyRequests,
-    };
-    setFilters(newFilters);
-    // We don't need to call filterRequests here since useEffect will handle it
-  };
-
-  // Function to filter requests based on selected filters
-  const filterRequests = (activeFilters) => {
-    // Make sure helpRequests exists and is an array
-    if (!helpRequests || !Array.isArray(helpRequests)) {
-      console.log("No help requests to filter");
-      setFilteredRequests([]);
-      return;
-    }
-
-    let filtered = [...helpRequests];
-
-    // Filter by urgency
-    if (activeFilters.urgency !== "all") {
-      filtered = filtered.filter(
-        (request) => request.urgencyLevel === activeFilters.urgency
-      );
-    }
-
-    // Filter by category
-    if (activeFilters.category !== "all") {
-      filtered = filtered.filter(
-        (request) =>
-          request.category &&
-          request.category.toLowerCase() ===
-            activeFilters.category.toLowerCase()
-      );
-    }
-
-    // Filter by user's own requests
-    if (activeFilters.showMyRequests && isLoggedIn && userData) {
-      filtered = filtered.filter(
-        (request) => request.createdBy && request.createdBy._id === userData._id
-      );
-    }
-
-    console.log(
-      `Filtered from ${helpRequests.length} to ${filtered.length} requests`
-    );
-    setFilteredRequests(filtered);
-  };
-
-  // Function to determine urgency badge class
-  const getUrgencyBadgeClass = (level) => {
-    switch (level) {
-      case "urgent":
-        return "bg-red-600 text-white";
-      case "medium":
-        return "bg-yellow-500 text-white";
-      case "low":
-        return "bg-blue-500 text-white";
-      default:
-        return "bg-gray-500 text-white";
-    }
-  };
-
-  // Function to check if a request was created by the current user
-  const isUserRequest = (request) => {
     return (
-      isLoggedIn &&
-      userData &&
-      request.createdBy &&
-      request.createdBy._id === userData._id
+      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${colors[level] || "bg-slate-100 text-slate-500 border-slate-200"}`}>
+        {level}
+      </span>
     );
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Community Help Requests</h1>
-
-      {/* Create New Help Request */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Create New Help Request</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block mb-2 text-sm font-medium">Title</label>
-              <input
-                type="text"
-                name="title"
-                value={newRequest.title}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="Help request title"
-                required
-              />
-            </div>
-            <div>
-              <label className="block mb-2 text-sm font-medium">Location</label>
-              <input
-                type="text"
-                name="location"
-                value={newRequest.location}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="Where is help needed?"
-                required
-              />
-            </div>
-            <div>
-              <label className="block mb-2 text-sm font-medium">Category</label>
-              <select
-                name="category"
-                value={newRequest.category}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                required
-              >
-                <option value="general">General</option>
-                <option value="education">Education</option>
-                <option value="health">Healthcare</option>
-                <option value="environment">Environmental</option>
-                <option value="food">Food & Hunger</option>
-                <option value="homelessness">Homelessness</option>
-                <option value="animals">Animal Welfare</option>
-                <option value="elderly">Elderly Support</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label className="block mb-2 text-sm font-medium">
-                Urgency Level
-              </label>
-              <select
-                name="urgencyLevel"
-                value={newRequest.urgencyLevel}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                required
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="urgent">Urgent</option>
-              </select>
-            </div>
-            <div className="md:col-span-2">
-              <label className="block mb-2 text-sm font-medium">
-                Description
-              </label>
-              <textarea
-                name="description"
-                value={newRequest.description}
-                onChange={handleInputChange}
-                rows="4"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="Describe what help is needed..."
-                required
-              ></textarea>
-            </div>
-            <div>
-              <label className="block mb-2 text-sm font-medium">
-                Contact Information
-              </label>
-              <input
-                type="text"
-                name="contactInfo"
-                value={newRequest.contactInfo}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="Email or phone number"
-                required
-              />
-            </div>
-            <div className="md:col-span-2">
-              <button
-                type="submit"
-                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
-              >
-                {isLoggedIn ? "Submit Help Request" : "Sign Up to Submit"}
-              </button>
-            </div>
+    <div className="min-h-screen bg-slate-50">
+      {/* Header Section */}
+      <div className="bg-slate-900 pt-20 pb-32 px-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] -mr-20 -mt-20" />
+        <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div>
+            <h1 className="text-5xl font-black text-white mb-4 tracking-tight">Community Pulse</h1>
+            <p className="text-blue-200/60 text-lg font-medium max-w-xl">
+              Local requests for immediate help. From teaching basic needs to hardware fixes, the community is here to support you.
+            </p>
           </div>
-        </form>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black transition-all shadow-xl shadow-blue-500/20 flex items-center gap-2"
+          >
+            <HiOutlinePlus size={20} /> New Support Request
+          </button>
+        </div>
       </div>
 
-      {/* Filter Controls */}
-      <div className="mb-6 bg-gray-100 p-4 rounded-lg">
-        <h3 className="text-lg font-medium mb-3">Filter Requests</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block mb-2 text-sm font-medium">Urgency</label>
-            <select
-              name="urgency"
+      <div className="max-w-6xl mx-auto px-6 -mt-12 relative z-20">
+        {/* Filters */}
+        <div className="bg-white rounded-3xl p-4 shadow-xl shadow-slate-200/50 border border-slate-100 mb-12 flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100">
+            <HiOutlineFilter className="text-slate-400" />
+            <select 
+              className="bg-transparent border-none text-sm font-bold text-slate-700 focus:ring-0 cursor-pointer"
               value={filters.urgency}
-              onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              onChange={(e) => setFilters({...filters, urgency: e.target.value})}
             >
-              <option value="all">All Urgencies</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="urgent">Urgent</option>
+              <option value="all">All Priority</option>
+              <option value="urgent">Urgent Only</option>
+              <option value="medium">Medium Priority</option>
+              <option value="low">Low Priority</option>
             </select>
           </div>
-          <div>
-            <label className="block mb-2 text-sm font-medium">Category</label>
-            <select
-              name="category"
+
+          <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100">
+            <HiOutlineGlobeAlt className="text-slate-400" />
+            <select 
+              className="bg-transparent border-none text-sm font-bold text-slate-700 focus:ring-0 cursor-pointer"
               value={filters.category}
-              onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              onChange={(e) => setFilters({...filters, category: e.target.value})}
             >
-              <option value="all">All Categories</option>
+              <option value="all">Every Category</option>
               <option value="general">General</option>
               <option value="education">Education</option>
               <option value="health">Healthcare</option>
               <option value="environment">Environmental</option>
               <option value="food">Food & Hunger</option>
-              <option value="homelessness">Homelessness</option>
-              <option value="animals">Animal Welfare</option>
-              <option value="elderly">Elderly Support</option>
-              <option value="other">Other</option>
             </select>
           </div>
-          {isLoggedIn && (
-            <div>
-              <label className="block mb-2 text-sm font-medium">
-                Filter By
-              </label>
-              <div className="bg-white border border-gray-300 rounded-md px-4 py-2 flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">
-                  Show only my requests
-                </span>
-                <button
-                  type="button"
-                  onClick={handleMyRequestsToggle}
-                  className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  role="switch"
-                  aria-checked={filters.showMyRequests}
-                  style={{
-                    backgroundColor: filters.showMyRequests
-                      ? "#2563EB"
-                      : "#E5E7EB",
-                  }}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                      filters.showMyRequests ? "translate-x-5" : "translate-x-0"
-                    }`}
-                  />
-                </button>
+
+          <button 
+            onClick={() => setFilters({...filters, showMyRequests: !filters.showMyRequests})}
+            className={`px-6 py-2 rounded-2xl text-sm font-black transition-all border ${filters.showMyRequests ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/25' : 'bg-white text-slate-600 border-slate-100 hover:bg-slate-50'}`}
+          >
+            My Requests Only
+          </button>
+        </div>
+
+        {/* Requests Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
+          {loadingHelpRequests ? (
+            Array(6).fill(0).map((_, i) => (
+              <div key={i} className="bg-slate-200 animate-pulse h-64 rounded-[40px]" />
+            ))
+          ) : filteredRequests.length > 0 ? (
+            filteredRequests.map((request) => (
+              <motion.div 
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                key={request._id}
+                className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all group"
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <UrgencyBadge level={request.urgencyLevel} />
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                    <HiOutlineClock /> {new Date(request.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+
+                <h3 className="text-xl font-black text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">
+                  {request.title}
+                </h3>
+                <p className="text-slate-500 font-medium text-sm mb-6 line-clamp-3">
+                  {request.description}
+                </p>
+
+                <div className="space-y-3 mb-8">
+                  <div className="flex items-center gap-3 text-sm font-bold text-slate-600 bg-slate-50 p-3 rounded-2xl">
+                    <HiOutlineLocationMarker className="text-blue-500" /> {request.location}
+                  </div>
+                  <div className="flex items-center gap-3 text-sm font-bold text-slate-600">
+                    <HiOutlineUser className="text-indigo-500" /> {request.createdBy?.name || "Anonymous"} 
+                    {isLoggedIn && userData && request.createdBy?._id === userData._id && (
+                      <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest">You</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <HiOutlineHeart className="text-rose-500" />
+                    <span className="text-xs font-black text-slate-900">{request.offers} Helpers</span>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    {isLoggedIn && userData && request.createdBy?._id === userData._id ? (
+                      <button 
+                        onClick={() => handleDelete(request._id)}
+                        className="p-3 bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-600 hover:text-white transition-all shadow-sm shadow-rose-200"
+                        title="Delete Request"
+                      >
+                        <HiOutlineTrash size={20} />
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => handleOfferHelpClick(request._id)}
+                        disabled={processingRequest === request._id}
+                        className={`px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all ${
+                          hasUserOfferedHelp(request._id) 
+                            ? 'bg-emerald-600 text-white shadow-emerald-500/25' 
+                            : 'bg-slate-900 text-white hover:bg-blue-600 shadow-slate-500/25 shadow-lg'
+                        }`}
+                      >
+                        {hasUserOfferedHelp(request._id) ? "Help Offered" : "Offer Support"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full py-20 text-center bg-white rounded-[48px] border-2 border-dashed border-slate-200">
+              <div className="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
+                <HiOutlineGlobeAlt size={40} />
               </div>
+              <h3 className="text-2xl font-black text-slate-900 mb-2">Neighborhood is Quiet</h3>
+              <p className="text-slate-500 font-medium">No active help requests match your search criteria.</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Debug button to manually refresh help requests */}
-      <button
-        onClick={() => {
-          fetchAllHelpRequests();
-          setRefreshTrigger((prev) => prev + 1);
-        }}
-        className="mb-4 bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded-md text-sm"
-      >
-        🔄 Refresh Help Requests
-      </button>
-
-      {/* Help Requests */}
-      <div id="help-requests" className="space-y-6">
-        <h2 className="text-2xl font-semibold">Current Help Requests</h2>
-        {loadingHelpRequests ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-2">Loading requests...</p>
-          </div>
-        ) : !helpRequests || helpRequests.length === 0 ? (
-          <div className="text-center py-8 bg-gray-100 rounded-lg">
-            <p>No help requests found. Be the first to create one!</p>
-          </div>
-        ) : filteredRequests.length === 0 ? (
-          <div className="text-center py-8 bg-gray-100 rounded-lg">
-            <p>
-              No help requests match your filters. Try changing your filters or
-              create a new request!
-            </p>
-          </div>
-        ) : (
-          filteredRequests.map((request) => (
-            <div
-              key={request._id}
-              className="bg-white rounded-lg shadow-md p-6"
+      {/* New Request Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setIsModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+               initial={{ opacity: 0, scale: 0.95, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+               className="relative w-full max-w-2xl bg-white rounded-[48px] p-8 md:p-12 shadow-2xl overflow-y-auto max-h-[90vh]"
             >
-              <div className="flex justify-between items-start">
-                <h3 className="text-xl font-semibold mb-2">{request.title}</h3>
-                <span
-                  className={`px-3 py-1 text-sm rounded-full ${getUrgencyBadgeClass(
-                    request.urgencyLevel
-                  )}`}
+              <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 p-3 hover:bg-slate-100 rounded-full transition-all">
+                <HiX size={24} className="text-slate-400" />
+              </button>
+
+              <div className="mb-10">
+                <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Need Support?</h2>
+                <p className="text-slate-500 font-medium">Broadcast your request to the local community</p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Request Title</label>
+                    <input 
+                      type="text" 
+                      name="title" 
+                      value={newRequest.title} 
+                      onChange={handleInputChange}
+                      placeholder="e.g. Need help with groceries"
+                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900" 
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Location</label>
+                    <input 
+                      type="text" 
+                      name="location" 
+                      value={newRequest.location} 
+                      onChange={handleInputChange}
+                      placeholder="Street, City"
+                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900" 
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
+                    <select 
+                      name="category" 
+                      value={newRequest.category} 
+                      onChange={handleInputChange}
+                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900 cursor-pointer"
+                    >
+                      <option value="general">General</option>
+                      <option value="education">Education</option>
+                      <option value="health">Healthcare</option>
+                      <option value="environment">Environmental</option>
+                      <option value="food">Food & Hunger</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Urgency</label>
+                    <select 
+                      name="urgencyLevel" 
+                      value={newRequest.urgencyLevel} 
+                      onChange={handleInputChange}
+                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900 cursor-pointer"
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="urgent">Urgent</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Detailed Description</label>
+                  <textarea 
+                    name="description" 
+                    value={newRequest.description} 
+                    onChange={handleInputChange}
+                    rows="4" 
+                    placeholder="Describe exactly what kind of help you need..."
+                    className="w-full px-6 py-4 bg-slate-50 border-none rounded-3xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900" 
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contact Method</label>
+                  <div className="relative">
+                    <HiOutlinePhone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <input 
+                      type="text" 
+                      name="contactInfo" 
+                      value={newRequest.contactInfo} 
+                      onChange={handleInputChange}
+                      placeholder="Email or Phone number"
+                      className="w-full pl-14 pr-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900" 
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  type="submit"
+                  className="w-full py-5 bg-blue-600 text-white rounded-3xl font-black text-lg shadow-xl shadow-blue-500/30 hover:bg-blue-700 transition-all active:scale-[0.98]"
                 >
-                  {request.urgencyLevel.charAt(0).toUpperCase() +
-                    request.urgencyLevel.slice(1)}
-                </span>
-              </div>
-              <p className="mb-3 text-gray-600">{request.description}</p>
-              <div className="mb-3">
-                <p className="text-sm text-gray-500">
-                  <span className="font-medium">Location:</span>{" "}
-                  {request.location}
-                </p>
-                <p className="text-sm text-gray-500">
-                  <span className="font-medium">Category:</span>{" "}
-                  {request.category}
-                </p>
-                <p className="text-sm text-gray-500">
-                  <span className="font-medium">Posted by:</span>{" "}
-                  {request.createdBy?.name || "Anonymous"}
-                  {isUserRequest(request) && " (You)"}
-                </p>
-                <p className="text-sm text-gray-500">
-                  <span className="font-medium">Contact:</span>{" "}
-                  {request.contactInfo}
-                </p>
-                <p className="text-sm text-gray-500">
-                  <span className="font-medium">Posted:</span>{" "}
-                  {new Date(request.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">
-                  <strong>{request.offers}</strong> people have offered to help
-                </span>
-                {isUserRequest(request) ? (
-                  <button
-                    onClick={() => handleDeleteHelpRequest(request._id)}
-                    disabled={processingRequest === request._id}
-                    className={`bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm ${
-                      processingRequest === request._id
-                        ? "opacity-70 cursor-not-allowed"
-                        : ""
-                    }`}
-                  >
-                    {processingRequest === request._id
-                      ? "Processing..."
-                      : "Delete Request"}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleOfferHelpClick(request._id)}
-                    disabled={processingRequest === request._id}
-                    className={`${
-                      hasUserOfferedHelp(request._id)
-                        ? "bg-orange-500 hover:bg-orange-600"
-                        : "bg-green-600 hover:bg-green-700"
-                    } text-white px-4 py-2 rounded-md text-sm ${
-                      processingRequest === request._id
-                        ? "opacity-70 cursor-not-allowed"
-                        : ""
-                    }`}
-                  >
-                    {processingRequest === request._id
-                      ? "Processing..."
-                      : isLoggedIn
-                      ? hasUserOfferedHelp(request._id)
-                        ? "Withdraw Offer"
-                        : "Offer Help"
-                      : "Sign Up to Help"}
-                  </button>
-                )}
-              </div>
-            </div>
-          ))
+                  Broadcast to Neighborhood
+                </button>
+              </form>
+            </motion.div>
+          </div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 }

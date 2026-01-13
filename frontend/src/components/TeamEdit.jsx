@@ -1,7 +1,10 @@
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { Appcontext } from "../context/Appcontext";
+import { motion } from "framer-motion";
+import { HiOutlineArrowLeft, HiOutlineCheckCircle, HiOutlineGlobeAlt, HiOutlineShieldCheck, HiOutlineCamera } from "react-icons/hi";
+import { toast } from "react-toastify";
 
 function TeamEdit() {
   const { id } = useParams();
@@ -9,9 +12,7 @@ function TeamEdit() {
   const { token, backendUrl } = useContext(Appcontext);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
 
-  // Form state
   const [teamData, setTeamData] = useState({
     name: "",
     description: "",
@@ -20,216 +21,197 @@ function TeamEdit() {
     avatar: "",
   });
 
-  // Load the team data when component mounts
   useEffect(() => {
     const fetchTeamData = async () => {
       try {
         setLoading(true);
-        // Fixed API endpoint: 'teams' → 'team' (singular)
         const response = await axios.get(`${backendUrl}/api/team/${id}`);
         setTeamData({
           name: response.data.name || "",
           description: response.data.description || "",
           cause: response.data.cause || "",
-          isPublic: response.data.isPublic !== false, // default to true if undefined
+          isPublic: response.data.isPublic !== false,
           avatar: response.data.avatar || "",
         });
       } catch (err) {
-        console.error("Error fetching team details:", err);
-        setError("Failed to load team details. Please try again.");
+        toast.error("Failed to load team details");
+        navigate("/teams");
       } finally {
         setLoading(false);
       }
     };
 
-    if (id && backendUrl && token) {
-      fetchTeamData();
-    } else {
-      navigate("/teams");
-    }
-  }, [id, backendUrl, token, navigate]);
+    if (id && backendUrl && token) fetchTeamData();
+    else if (!token) navigate("/login");
+  }, [id, backendUrl, token]);
 
-  // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setTeamData({
-      ...teamData,
-      [name]: type === "checkbox" ? checked : value,
-    });
+    setTeamData(prev => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!token) {
-      alert("You must be logged in to update a team");
-      navigate("/login");
-      return;
-    }
-
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-
-      // Fixed API endpoint: 'teams' → 'team' (singular)
       await axios.put(`${backendUrl}/api/team/${id}`, teamData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      alert("Team updated successfully!");
+      toast.success("Team settings synchronized");
       navigate(`/teams/${id}`);
     } catch (err) {
-      console.error("Error updating team:", err);
-      setError(
-        err.response?.data?.message ||
-          "Failed to update team. Please try again."
-      );
+      toast.error(err.response?.data?.message || "Update failed");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Edit Team</h1>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
-
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-lg shadow-md p-6"
-      >
-        <div className="grid grid-cols-1 gap-6">
-          {/* Team Name */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Team Name</label>
-            <input
-              type="text"
-              name="name"
-              value={teamData.name}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              required
-            />
+    <div className="min-h-screen bg-slate-50 py-20 px-4">
+      <div className="max-w-3xl mx-auto">
+        <Link 
+          to={`/teams/${id}`} 
+          className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 mb-8 transition-colors font-black text-[10px] uppercase tracking-widest"
+        >
+          <HiOutlineArrowLeft size={16} /> Discard Changes
+        </Link>
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-[50px] p-8 md:p-16 shadow-2xl shadow-slate-200/50 border border-slate-100"
+        >
+          <div className="mb-12">
+            <h1 className="text-4xl font-black text-slate-900 mb-2">Team Settings</h1>
+            <p className="text-slate-500 font-medium tracking-tight">Optimize your community's identity and reach.</p>
           </div>
 
-          {/* Cause/Category */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Team Cause</label>
-            <select
-              name="cause"
-              value={teamData.cause}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              required
-            >
-              <option value="">Select a cause</option>
-              <option value="Environment">Environment</option>
-              <option value="Education">Education</option>
-              <option value="Food">Food</option>
-              <option value="Healthcare">Healthcare</option>
-              <option value="Animals">Animals</option>
-              <option value="Elderly">Elderly</option>
-              <option value="Development">Development</option>
-              <option value="Community">Community</option>
-            </select>
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-10">
+            {/* Avatar Section */}
+            <div className="flex flex-col items-center justify-center p-10 bg-slate-50 rounded-[40px] border-2 border-dashed border-slate-200 group transition-all hover:border-blue-400">
+               <div className="relative mb-6">
+                  <div className="w-32 h-32 bg-white rounded-[40px] shadow-xl flex items-center justify-center overflow-hidden border-4 border-white">
+                    {teamData.avatar ? (
+                      <img src={teamData.avatar} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <HiOutlineCamera size={40} className="text-slate-300" />
+                    )}
+                  </div>
+               </div>
+               <div className="w-full max-w-sm">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Branding URL</label>
+                  <input
+                    type="text"
+                    name="avatar"
+                    value={teamData.avatar}
+                    onChange={handleInputChange}
+                    className="w-full bg-white border-none rounded-2xl px-5 py-4 text-sm font-medium focus:ring-2 focus:ring-blue-500 shadow-sm"
+                    placeholder="https://image-url.com/logo.png"
+                  />
+               </div>
+            </div>
 
-          {/* Avatar URL */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Avatar URL (optional)
-            </label>
-            <input
-              type="text"
-              name="avatar"
-              value={teamData.avatar}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              placeholder="https://example.com/image.jpg"
-            />
-            {teamData.avatar && (
-              <div className="mt-2">
-                <p className="text-sm mb-1">Preview:</p>
-                <img
-                  src={teamData.avatar}
-                  alt="Avatar preview"
-                  className="h-16 w-16 rounded-full object-cover border border-gray-300"
-                  onError={(e) => {
-                    e.target.src = "https://placehold.co/100x100?text=Team";
-                  }}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Identity Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={teamData.name}
+                  onChange={handleInputChange}
+                  className="w-full bg-slate-50 border-none rounded-[20px] px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 transition-all"
+                  required
                 />
               </div>
-            )}
-          </div>
 
-          {/* Public/Private Toggle */}
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="isPublic"
-              id="isPublic"
-              checked={teamData.isPublic}
-              onChange={handleInputChange}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label
-              htmlFor="isPublic"
-              className="ml-2 block text-sm text-gray-900"
-            >
-              Make this team public (Anyone can join)
-            </label>
-          </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Social Cause</label>
+                <select
+                  name="cause"
+                  value={teamData.cause}
+                  onChange={handleInputChange}
+                  className="w-full bg-slate-50 border-none rounded-[20px] px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 transition-all appearance-none"
+                  required
+                >
+                  <option value="Environment">Environment</option>
+                  <option value="Education">Education</option>
+                  <option value="Food">Food</option>
+                  <option value="Healthcare">Healthcare</option>
+                  <option value="Animals">Animals</option>
+                  <option value="Elderly">Elderly</option>
+                  <option value="Development">Development</option>
+                  <option value="Community">Community</option>
+                </select>
+              </div>
+            </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={teamData.description}
-              onChange={handleInputChange}
-              rows="4"
-              className="w-full p-2 border border-gray-300 rounded-md"
-              required
-            ></textarea>
-          </div>
-        </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Global Visibility</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setTeamData(prev => ({ ...prev, isPublic: true }))}
+                  className={`flex items-center gap-4 p-6 rounded-[28px] border-2 transition-all ${teamData.isPublic ? 'border-blue-600 bg-blue-50/50' : 'border-slate-100'}`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${teamData.isPublic ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                    <HiOutlineGlobeAlt size={22} />
+                  </div>
+                  <div className="text-left">
+                    <div className={`font-black text-sm ${teamData.isPublic ? 'text-blue-600' : 'text-slate-900'}`}>Public Discovery</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase">Visible to all users</div>
+                  </div>
+                </button>
 
-        {/* Buttons */}
-        <div className="mt-6 flex justify-between">
-          <button
-            type="button"
-            onClick={() => navigate(`/teams/${id}`)}
-            className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50"
-          >
-            Cancel
-          </button>
+                <button
+                  type="button"
+                  onClick={() => setTeamData(prev => ({ ...prev, isPublic: false }))}
+                  className={`flex items-center gap-4 p-6 rounded-[28px] border-2 transition-all ${!teamData.isPublic ? 'border-indigo-600 bg-indigo-50/50' : 'border-slate-100'}`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${!teamData.isPublic ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                    <HiOutlineShieldCheck size={22} />
+                  </div>
+                  <div className="text-left">
+                    <div className={`font-black text-sm ${!teamData.isPublic ? 'text-indigo-600' : 'text-slate-900'}`}>Private Access</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase">Invitation only</div>
+                  </div>
+                </button>
+              </div>
+            </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${
-              submitting ? "opacity-70 cursor-not-allowed" : ""
-            }`}
-          >
-            {submitting ? "Updating..." : "Update Team"}
-          </button>
-        </div>
-      </form>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mission Statement</label>
+              <textarea
+                name="description"
+                value={teamData.description}
+                onChange={handleInputChange}
+                rows="5"
+                className="w-full bg-slate-50 border-none rounded-[30px] px-8 py-6 font-medium text-slate-600 focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+                required
+              />
+            </div>
+
+            <div className="pt-8 flex gap-4">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex-1 py-5 bg-slate-900 text-white rounded-[24px] font-black text-base shadow-2xl shadow-slate-400/20 hover:bg-blue-600 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50"
+              >
+                {submitting ? (
+                  <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>Save All Changes <HiOutlineCheckCircle size={20} /></>
+                )}
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </div>
     </div>
   );
 }

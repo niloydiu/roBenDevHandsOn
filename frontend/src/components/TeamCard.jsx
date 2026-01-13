@@ -2,263 +2,126 @@ import axios from "axios";
 import React, { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Appcontext } from "../context/Appcontext";
+import { motion } from "framer-motion";
+import { HiOutlineUserGroup, HiOutlineCalendar, HiOutlineClock, HiOutlineExternalLink, HiOutlinePencilAlt, HiOutlineTrash, HiOutlineLogout } from "react-icons/hi";
+import { toast } from "react-toastify";
 
 const TeamCard = ({ team, handleLeaveTeam, onTeamDeleted }) => {
   const { token, backendUrl, userData } = useContext(Appcontext);
   const navigate = useNavigate();
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Extract team ID
   const teamId = team._id;
 
-  // Function to determine if the user is the creator of this team
   const isTeamCreator = () => {
     if (!userData || !team.creator) return false;
-
-    if (typeof team.creator === "object") {
-      return team.creator._id === userData._id;
-    }
-
-    return team.creator === userData._id;
+    return typeof team.creator === "object" ? team.creator._id === userData._id : team.creator === userData._id;
   };
 
-  // Handle team deletion
   const handleDeleteTeam = async () => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this team? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
-
+    if (!window.confirm("Are you sure you want to delete this team? This action cannot be undone.")) return;
     try {
       setIsDeleting(true);
-      await axios.delete(`${backendUrl}/api/team/${teamId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      // Call the callback to update the UI
-      if (onTeamDeleted) {
-        onTeamDeleted(teamId);
-      }
-
-      alert("Team deleted successfully");
+      await axios.delete(`${backendUrl}/api/team/${teamId}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (onTeamDeleted) onTeamDeleted(teamId);
+      toast.success("Team deleted successfully");
     } catch (error) {
-      console.error("Error deleting team:", error);
-      alert(
-        error.response?.data?.message ||
-          "Failed to delete team. Please try again."
-      );
+      toast.error(error.response?.data?.message || "Failed to delete team");
     } finally {
       setIsDeleting(false);
     }
   };
 
-  // Helper for cause styling
-  const getCauseColor = (cause) => {
-    switch (cause?.toLowerCase()) {
-      case "environment":
-        return "bg-green-100 text-green-800";
-      case "education":
-        return "bg-blue-100 text-blue-800";
-      case "food":
-        return "bg-yellow-100 text-yellow-800";
-      case "healthcare":
-        return "bg-red-100 text-red-800";
-      case "animals":
-        return "bg-purple-100 text-purple-800";
-      case "elderly":
-        return "bg-orange-100 text-orange-800";
-      case "development":
-        return "bg-teal-100 text-teal-800";
-      case "community":
-        return "bg-indigo-100 text-indigo-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="p-6">
-        <div className="flex items-center mb-4">
-          <img
-            src={team.avatar || "https://placehold.co/100x100?text=Team"}
-            alt={team.name}
-            className="w-12 h-12 rounded-full mr-4"
-          />
-          <div>
-            <h3 className="text-lg font-semibold">{team.name}</h3>
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCauseColor(
-                team.cause
-              )}`}
-            >
-              {team.cause}
-            </span>
-            <span className="ml-2 text-xs text-gray-500">
-              {team.isPublic ? "Public" : "Private"}
-            </span>
-            {team.isAdmin && (
-              <span className="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">
-                Admin
-              </span>
-            )}
-            {isTeamCreator() && (
-              <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">
-                Creator
-              </span>
-            )}
-          </div>
-        </div>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -8 }}
+      className="group relative bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 overflow-hidden"
+    >
+      {/* Background Accent */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-[100px] -z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-        <p className="text-gray-600 text-sm mb-4">{team.description}</p>
-
-        <div className="grid grid-cols-3 gap-2 text-center mb-4">
-          <div className="bg-gray-50 p-2 rounded">
-            <span className="block text-lg font-semibold">
-              {team.memberCount}
-            </span>
-            <span className="text-xs text-gray-500">Members</span>
-          </div>
-          <div className="bg-gray-50 p-2 rounded">
-            <span className="block text-lg font-semibold">
-              {team.eventsCount || 0}
-            </span>
-            <span className="text-xs text-gray-500">Events</span>
-          </div>
-          <div className="bg-gray-50 p-2 rounded">
-            <span className="block text-lg font-semibold">
-              {team.hoursContributed || 0}
-            </span>
-            <span className="text-xs text-gray-500">Hours</span>
-          </div>
-        </div>
-
-        {/* Improved Button Layout */}
-        <div className="mt-5">
-          <div className="grid grid-cols-2 gap-2">
-            {/* View Details - Always visible */}
-            <Link
-              to={`/teams/${teamId}`}
-              className="flex items-center justify-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors text-sm"
-            >
-              <svg
-                className="w-4 h-4 mr-1.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                ></path>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                ></path>
-              </svg>
-              View Details
-            </Link>
-
-            {isTeamCreator() ? (
-              // Edit - Only for team creators
-              <Link
-                to={`/edit-team/${teamId}`}
-                className="flex items-center justify-center px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-md transition-colors text-sm"
-              >
-                <svg
-                  className="w-4 h-4 mr-1.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  ></path>
-                </svg>
-                Edit Team
-              </Link>
+      <div className="relative z-10">
+        <div className="flex justify-between items-start mb-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-[22px] flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-blue-200">
+            {team.avatar ? (
+              <img src={team.avatar} alt={team.name} className="w-full h-full object-cover rounded-[22px]" />
             ) : (
-              // Join/Leave - For regular members
-              <button
-                onClick={() => handleLeaveTeam(teamId)}
-                className="flex items-center justify-center px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-md transition-colors text-sm"
-              >
-                <svg
-                  className="w-4 h-4 mr-1.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  ></path>
-                </svg>
-                Leave Team
-              </button>
+              team.name.charAt(0)
             )}
           </div>
-
-          {/* Additional row for creators */}
-          {isTeamCreator() && (
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              <button
-                onClick={handleDeleteTeam}
-                disabled={isDeleting}
-                className="flex items-center justify-center px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors text-sm disabled:opacity-60 disabled:pointer-events-none"
-              >
-                <svg
-                  className="w-4 h-4 mr-1.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+          
+          <div className="flex gap-2">
+            {isTeamCreator() && (
+              <>
+                <Link 
+                  to={`/edit-team/${teamId}`}
+                  className="p-3 text-slate-300 hover:text-amber-500 hover:bg-amber-50 rounded-2xl transition-all"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  ></path>
-                </svg>
-                {isDeleting ? "Deleting..." : "Delete Team"}
-              </button>
-
-              <button
-                onClick={() => handleLeaveTeam(teamId)}
-                className="flex items-center justify-center px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-md transition-colors text-sm"
-              >
-                <svg
-                  className="w-4 h-4 mr-1.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                  <HiOutlinePencilAlt size={20} />
+                </Link>
+                <button 
+                  onClick={handleDeleteTeam}
+                  disabled={isDeleting}
+                  className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all disabled:opacity-50"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  ></path>
-                </svg>
-                Leave Team
-              </button>
-            </div>
-          )}
+                  <HiOutlineTrash size={20} />
+                </button>
+              </>
+            )}
+            <button 
+              onClick={() => handleLeaveTeam(teamId)}
+              className="p-3 text-slate-300 hover:text-orange-500 hover:bg-orange-50 rounded-2xl transition-all"
+              title="Leave Team"
+            >
+              <HiOutlineLogout size={20} />
+            </button>
+          </div>
         </div>
+
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full">
+              {team.cause || 'Community'}
+            </span>
+            {isTeamCreator() && (
+              <span className="px-3 py-1 bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-widest rounded-full">
+                Founder
+              </span>
+            )}
+          </div>
+          <h3 className="text-2xl font-black text-slate-900 leading-tight mb-2 group-hover:text-blue-600 transition-colors">
+            {team.name}
+          </h3>
+          <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed font-medium">
+            {team.description}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 mb-8">
+          <div className="bg-slate-50 p-4 rounded-3xl text-center">
+            <div className="text-lg font-black text-slate-900">{team.memberCount || 0}</div>
+            <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Members</div>
+          </div>
+          <div className="bg-slate-50 p-4 rounded-3xl text-center">
+            <div className="text-lg font-black text-slate-900">{team.eventsCount || 0}</div>
+            <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Events</div>
+          </div>
+          <div className="bg-slate-50 p-4 rounded-3xl text-center">
+            <div className="text-lg font-black text-slate-900">{team.hoursContributed || 0}h</div>
+            <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Impact</div>
+          </div>
+        </div>
+
+        <Link 
+          to={`/teams/${teamId}`} 
+          className="flex items-center justify-center gap-2 w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-blue-600 transition-all active:scale-95 shadow-xl shadow-slate-200"
+        >
+          Open Workspace <HiOutlineExternalLink size={18} />
+        </Link>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

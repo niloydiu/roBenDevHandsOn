@@ -2,319 +2,280 @@ import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Appcontext } from "../context/Appcontext";
+import { motion } from "framer-motion";
+import { 
+  HiOutlineClipboardCheck, 
+  HiOutlineCalendar, 
+  HiOutlineLocationMarker, 
+  HiOutlineTag, 
+  HiOutlineUserGroup,
+  HiOutlineArrowLeft,
+  HiOutlinePencilAlt
+} from "react-icons/hi";
+import { toast } from "react-toastify";
 
 function EditEvent() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { token, backendUrl } = useContext(Appcontext);
+  const { token, backendUrl, fetchAllEvents } = useContext(Appcontext);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
 
-  // Form state
-  const [eventData, setEventData] = useState({
+  const [formData, setFormData] = useState({
     title: "",
     description: "",
+    category: "",
     date: "",
     startTime: "",
     endTime: "",
     location: "",
-    category: "",
-    maxParticipants: 10,
+    maxParticipants: "",
     requirements: "",
     organizer: "",
   });
 
-  // Load the event data when component mounts
   useEffect(() => {
     const fetchEventData = async () => {
       try {
         setLoading(true);
         const response = await axios.get(`${backendUrl}/api/event/${id}`);
+        const ev = response.data.event || response.data;
 
-        // Format the date for the input field with proper validation
         let formattedDate = "";
-        if (response.data.event?.date) {
-          try {
-            const eventDate = new Date(response.data.event.date);
-
-            // Check if date is valid before formatting
-            if (!isNaN(eventDate.getTime())) {
-              formattedDate = eventDate.toISOString().split("T")[0];
-            } else {
-              console.warn(
-                "Invalid date format in event:",
-                response.data.event.date
-              );
-              formattedDate = ""; // Fallback to empty string
-            }
-          } catch (dateError) {
-            console.warn("Error parsing date:", dateError);
-          }
+        if (ev.date) {
+          const d = new Date(ev.date);
+          if (!isNaN(d.getTime())) formattedDate = d.toISOString().split("T")[0];
         }
 
-        const eventToUpdate = response.data.event || response.data;
-
-        setEventData({
-          ...eventToUpdate,
+        setFormData({
+          title: ev.title || "",
+          description: ev.description || "",
+          category: ev.category || "",
           date: formattedDate,
-          // Ensure we have default values for optional fields
-          requirements: eventToUpdate.requirements || "",
-          organizer: eventToUpdate.organizer || "",
-          maxParticipants: eventToUpdate.maxParticipants || 10,
+          startTime: ev.startTime || "",
+          endTime: ev.endTime || "",
+          location: ev.location || "",
+          maxParticipants: ev.maxParticipants?.toString() || "50",
+          requirements: ev.requirements || "",
+          organizer: ev.organizer || "",
         });
       } catch (err) {
-        console.error("Error fetching event details:", err);
-        setError("Failed to load event details. Please try again.");
+        toast.error("Failed to load event details");
+        navigate("/events");
       } finally {
         setLoading(false);
       }
     };
 
-    if (id && backendUrl && token) {
-      fetchEventData();
-    } else {
-      navigate("/events");
-    }
-  }, [id, backendUrl, token, navigate]);
+    if (id && backendUrl && token) fetchEventData();
+  }, [id, backendUrl, token]);
 
-  // Handle form input changes
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setEventData({
-      ...eventData,
-      [name]: value,
-    });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!token) {
-      alert("You must be logged in to update an event");
-      navigate("/login");
-      return;
-    }
-
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-
-      // Convert maxParticipants to number
-      const updatedEventData = {
-        ...eventData,
-        maxParticipants: Number(eventData.maxParticipants),
-      };
-
-      await axios.put(`${backendUrl}/api/event/${id}`, updatedEventData, {
-        headers: { Authorization: `Bearer ${token}` },
+      await axios.put(`${backendUrl}/api/event/${id}`, {
+        ...formData,
+        maxParticipants: Number(formData.maxParticipants)
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-
-      alert("Event updated successfully!");
+      toast.success("Event updated successfully!");
+      fetchAllEvents();
       navigate(`/events/${id}`);
     } catch (err) {
-      console.error("Error updating event:", err);
-      setError(
-        err.response?.data?.message ||
-          "Failed to update event. Please try again."
-      );
+      toast.error(err.response?.data?.message || "Failed to update event");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  const categories = ["Environmental", "Education", "Hunger Relief", "Community Support", "Healthcare", "Animal Welfare", "Crisis Response", "Arts & Culture", "Other"];
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Edit Event</h1>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
-
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-lg shadow-md p-6"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Event Title
-            </label>
-            <input
-              type="text"
-              name="title"
-              value={eventData.title}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Category</label>
-            <select
-              name="category"
-              value={eventData.category}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              required
-            >
-              <option value="">Select a category</option>
-              <option value="Environmental">Environmental</option>
-              <option value="Education">Education</option>
-              <option value="Hunger Relief">Hunger Relief</option>
-              <option value="Community Support">Community Support</option>
-              <option value="Healthcare">Healthcare</option>
-              <option value="Animal Welfare">Animal Welfare</option>
-              <option value="Crisis Response">Crisis Response</option>
-              <option value="Arts & Culture">Arts & Culture</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-
-          {/* Date */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Date</label>
-            <input
-              type="date"
-              name="date"
-              value={eventData.date}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-
-          {/* Start Time */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Start Time</label>
-            <input
-              type="time"
-              name="startTime"
-              value={eventData.startTime}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-
-          {/* End Time */}
-          <div>
-            <label className="block text-sm font-medium mb-2">End Time</label>
-            <input
-              type="time"
-              name="endTime"
-              value={eventData.endTime}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-
-          {/* Location */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Location</label>
-            <input
-              type="text"
-              name="location"
-              value={eventData.location}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-
-          {/* Max Participants */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Maximum Participants
-            </label>
-            <input
-              type="number"
-              name="maxParticipants"
-              value={eventData.maxParticipants}
-              min="1"
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-
-          {/* Organizer */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Organizer</label>
-            <input
-              type="text"
-              name="organizer"
-              value={eventData.organizer || ""}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          {/* Description */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium mb-2">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={eventData.description}
-              onChange={handleInputChange}
-              rows="4"
-              className="w-full p-2 border border-gray-300 rounded-md"
-              required
-            ></textarea>
-          </div>
-
-          {/* Requirements */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium mb-2">
-              Requirements (optional)
-            </label>
-            <textarea
-              name="requirements"
-              value={eventData.requirements || ""}
-              onChange={handleInputChange}
-              rows="3"
-              className="w-full p-2 border border-gray-300 rounded-md"
-            ></textarea>
-          </div>
-        </div>
-
-        {/* Buttons */}
-        <div className="mt-6 flex justify-between">
-          <button
-            type="button"
-            onClick={() => navigate(`/events/${id}`)}
-            className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50"
+    <div className="min-h-screen bg-slate-50/50 pb-20">
+      <div className="bg-white border-b border-slate-100 pt-10 pb-12 mb-12">
+        <div className="container mx-auto px-4 lg:px-20">
+          <button 
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-slate-500 font-bold hover:text-blue-600 transition-colors mb-8 group"
           >
-            Cancel
+            <HiOutlineArrowLeft className="group-hover:-translate-x-1 transition-transform" />
+            Back to Details
           </button>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${
-              submitting ? "opacity-70 cursor-not-allowed" : ""
-            }`}
-          >
-            {submitting ? "Updating..." : "Update Event"}
-          </button>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <h1 className="text-4xl font-black text-slate-900 mb-2">Edit Event</h1>
+              <p className="text-slate-500 font-medium italic">Refine the details and keep your volunteers informed</p>
+            </div>
+            <div className="hidden lg:flex items-center gap-4 text-blue-600 bg-blue-50 px-6 py-4 rounded-3xl border border-blue-100">
+              <HiOutlinePencilAlt size={24} />
+              <span className="font-bold text-sm">Update mode active</span>
+            </div>
+          </div>
         </div>
-      </form>
+      </div>
+
+      <div className="container mx-auto px-4 lg:px-20">
+        <form onSubmit={handleSubmit} className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <div className="lg:col-span-2 space-y-8">
+              <section className="bg-white rounded-[40px] p-8 lg:p-10 shadow-sm border border-slate-100">
+                <h3 className="flex items-center gap-3 text-xl font-black text-slate-900 mb-8 pb-4 border-b border-slate-50">
+                  <HiOutlineClipboardCheck className="text-blue-600" size={24} />
+                  Main Details
+                </h3>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-2">Event Title</label>
+                    <input
+                      type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-6 py-4 bg-slate-50 border-transparent border-2 focus:border-blue-500 rounded-[24px] focus:ring-4 focus:ring-blue-500/10 transition-all font-bold text-slate-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-2">Description</label>
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      rows="6"
+                      required
+                      className="w-full px-6 py-4 bg-slate-50 border-transparent border-2 focus:border-blue-500 rounded-[24px] focus:ring-4 focus:ring-blue-500/10 transition-all font-bold text-slate-700 resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-2">Category</label>
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                      {categories.map(cat => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, category: cat }))}
+                          className={`px-4 py-3 rounded-2xl text-[10px] font-black tracking-wider transition-all border-2 uppercase ${formData.category === cat ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/20' : 'bg-slate-50 text-slate-500 border-transparent hover:border-slate-200'}`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section className="bg-white rounded-[40px] p-8 lg:p-10 shadow-sm border border-slate-100">
+                <h3 className="flex items-center gap-3 text-xl font-black text-slate-900 mb-8 pb-4 border-b border-slate-50">
+                  <HiOutlineLocationMarker className="text-blue-600" size={24} />
+                  Logistics & Location
+                </h3>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-2">Date</label>
+                      <input
+                        type="date"
+                        name="date"
+                        value={formData.date}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-6 py-4 bg-slate-50 border-transparent border-2 focus:border-blue-500 rounded-[24px] focus:ring-4 focus:ring-blue-500/10 transition-all font-bold text-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-2">Max Capacity</label>
+                      <input
+                        type="number"
+                        name="maxParticipants"
+                        value={formData.maxParticipants}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-6 py-4 bg-slate-50 border-transparent border-2 focus:border-blue-500 rounded-[24px] focus:ring-4 focus:ring-blue-500/10 transition-all font-bold text-slate-700"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-2">Start Time</label>
+                      <input
+                        type="time"
+                        name="startTime"
+                        value={formData.startTime}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-6 py-4 bg-slate-50 border-transparent border-2 focus:border-blue-500 rounded-[24px] focus:ring-4 focus:ring-blue-500/10 transition-all font-bold text-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-2">End Time</label>
+                      <input
+                        type="time"
+                        name="endTime"
+                        value={formData.endTime}
+                        onChange={handleChange}
+                        className="w-full px-6 py-4 bg-slate-50 border-transparent border-2 focus:border-blue-500 rounded-[24px] focus:ring-4 focus:ring-blue-500/10 transition-all font-bold text-slate-700"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-2">Full Address</label>
+                    <input
+                      type="text"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-6 py-4 bg-slate-50 border-transparent border-2 focus:border-blue-500 rounded-[24px] focus:ring-4 focus:ring-blue-500/10 transition-all font-bold text-slate-700"
+                    />
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div className="space-y-8">
+              <div className="bg-slate-900 rounded-[40px] p-8 text-white sticky top-32">
+                <h3 className="text-xl font-bold mb-6">Save Changes</h3>
+                <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+                  Volunteers already signed up will be notified of major changes if you choose to broadcast them.
+                </p>
+                <div className="space-y-4">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-[24px] font-black text-lg transition-all active:scale-95 flex items-center justify-center gap-3 shadow-xl shadow-blue-500/20"
+                  >
+                    {submitting ? (
+                      <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>Update Event</>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/events/${id}`)}
+                    className="w-full py-5 bg-white/5 hover:bg-white/10 text-white rounded-[24px] font-bold text-lg transition-all"
+                  >
+                    Discard Edits
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

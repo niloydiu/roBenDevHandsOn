@@ -1,90 +1,66 @@
 import React from "react";
+import { motion } from "framer-motion";
+import { HiOutlineUserGroup, HiOutlinePlus } from "react-icons/hi";
 
 const DiscoverTeamCard = ({ team, handleJoinTeam, myTeams }) => {
-  const getCauseColor = (cause) => {
-    switch (cause?.toLowerCase()) {
-      case "environment":
-        return "bg-green-100 text-green-800";
-      case "education":
-        return "bg-blue-100 text-blue-800";
-      case "food":
-        return "bg-yellow-100 text-yellow-800";
-      case "healthcare":
-        return "bg-red-100 text-red-800";
-      case "animals":
-        return "bg-purple-100 text-purple-800";
-      case "elderly":
-        return "bg-orange-100 text-orange-800";
-      case "development":
-        return "bg-teal-100 text-teal-800";
-      case "community":
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  // Get the correct ID - MongoDB uses _id
   const teamId = team._id || team.id;
-
-  // Check if user is already a member of this team
   const isAlreadyMember = myTeams.some(
     (myTeam) => (myTeam._id || myTeam.id) === teamId
   );
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="p-6">
-        <div className="flex items-center mb-4">
-          <img
-            src={team.avatar || "https://placehold.co/100x100?text=Team"}
-            alt={team.name}
-            className="w-12 h-12 rounded-full mr-4"
-          />
-          <div>
-            <h3 className="text-lg font-semibold">{team.name}</h3>
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCauseColor(
-                team.cause
-              )}`}
-            >
-              {team.cause}
-            </span>
-          </div>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -8 }}
+      className="group bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500"
+    >
+      <div className="flex justify-between items-start mb-6">
+        <div className="w-16 h-16 bg-blue-50 rounded-[22px] flex items-center justify-center text-blue-600 font-black shadow-inner">
+          {team.avatar ? (
+            <img src={team.avatar} alt={team.name} className="w-full h-full object-cover rounded-[22px]" />
+          ) : (
+            <HiOutlineUserGroup size={24} />
+          )}
         </div>
-
-        <p className="text-gray-600 text-sm mb-4">{team.description}</p>
-
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <span className="text-sm text-gray-500">
-              {team.memberCount} {team.memberCount === 1 ? "member" : "members"}
-            </span>
-          </div>
-          <div>
-            <span className="text-sm text-gray-500">
-              {team.eventsCount || 0}{" "}
-              {team.eventsCount === 1 ? "event" : "events"}
-            </span>
-          </div>
-        </div>
-
-        {isAlreadyMember ? (
-          <button className="w-full bg-gray-200 text-gray-700 py-2 rounded-md">
-            Already a Member
-          </button>
-        ) : (
-          <button
-            onClick={() => {
-              console.log("Joining team with ID:", teamId);
-              handleJoinTeam(teamId);
-            }}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md"
-          >
-            Join Team
-          </button>
-        )}
+        <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full">
+          {team.cause || 'General'}
+        </span>
       </div>
-    </div>
+
+      <div className="mb-8">
+        <h3 className="text-2xl font-black text-slate-900 leading-tight mb-2 group-hover:text-blue-600 transition-colors">
+          {team.name}
+        </h3>
+        <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed font-medium">
+          {team.description}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-6 mb-8 text-slate-400">
+        <div className="flex items-center gap-1.5">
+          <span className="text-lg font-black text-slate-900">{team.memberCount || 0}</span>
+          <span className="text-[10px] font-black uppercase tracking-wider">Members</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-lg font-black text-slate-900">{team.eventsCount || 0}</span>
+          <span className="text-[10px] font-black uppercase tracking-wider">Events</span>
+        </div>
+      </div>
+
+      {isAlreadyMember ? (
+        <div className="w-full py-4 bg-slate-50 text-slate-400 text-center rounded-2xl font-black text-sm border border-slate-100">
+          Already a Member
+        </div>
+      ) : (
+        <button
+          onClick={() => handleJoinTeam(teamId)}
+          className="flex items-center justify-center gap-2 w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-500/20"
+        >
+          <HiOutlinePlus size={18} /> Join Community
+        </button>
+      )}
+    </motion.div>
   );
 };
 

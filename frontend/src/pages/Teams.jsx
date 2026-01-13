@@ -5,14 +5,16 @@ import DiscoverTeamCard from "../components/DiscoverTeamCard";
 import LeaderboardTeamCard from "../components/LeaderboardTeamCard";
 import TeamCard from "../components/TeamCard";
 import { Appcontext } from "../context/Appcontext";
+import { motion, AnimatePresence } from "framer-motion";
+import { HiOutlineUserGroup, HiOutlineGlobeAlt, HiOutlineChartBar, HiOutlinePlus, HiOutlineEmojiHappy } from "react-icons/hi";
+import { toast } from "react-toastify";
 
 function Teams() {
-  const { backendUrl, token } = useContext(Appcontext);
+  const { backendUrl, token, isLoggedIn } = useContext(Appcontext);
   const [myTeams, setMyTeams] = useState([]);
   const [publicTeams, setPublicTeams] = useState([]);
   const [topTeams, setTopTeams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTeam, setNewTeam] = useState({
@@ -27,299 +29,201 @@ function Teams() {
 
   const fetchTeams = async () => {
     setLoading(true);
-    setError(null);
     try {
-      // Fetch my teams
-      const myTeamsResponse = await axios.get(
-        `${backendUrl}/api/team/my-teams`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setMyTeams(myTeamsResponse.data || []);
-
-      // Fetch public teams
-      const publicTeamsResponse = await axios.get(
-        `${backendUrl}/api/team/public`
-      );
-      setPublicTeams(publicTeamsResponse.data || []);
-
-      // Fetch top teams
-      const topTeamsResponse = await axios.get(
-        `${backendUrl}/api/team/leaderboard`
-      );
-      setTopTeams(topTeamsResponse.data || []);
+      const myPromise = isLoggedIn ? axios.get(`${backendUrl}/api/team/my-teams`, { headers: { Authorization: `Bearer ${token}` } }) : Promise.resolve({ data: [] });
+      const [myRes, publicRes, topRes] = await Promise.all([
+        myPromise,
+        axios.get(`${backendUrl}/api/team/public`),
+        axios.get(`${backendUrl}/api/team/leaderboard`)
+      ]);
+      setMyTeams(myRes.data || []);
+      setPublicTeams(publicRes.data || []);
+      setTopTeams(topRes.data || []);
     } catch (err) {
-      console.error("Error fetching teams:", err);
-      setError("Failed to load teams. Please try again.");
+      toast.error("Failed to load teams");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (token) {
-      fetchTeams();
-    } else {
-      setLoading(false);
-    }
-  }, [token, backendUrl]);
+    fetchTeams();
+  }, [token, backendUrl, isLoggedIn]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setNewTeam((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    setNewTeam(prev => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
   const handleCreateTeam = (createdTeam) => {
-    console.log("Team created successfully:", createdTeam);
-
-    // Update the teams list with the newly created team
-    setMyTeams((prev) => [createdTeam, ...prev]);
-
-    if (createdTeam.isPublic) {
-      setPublicTeams((prev) => [createdTeam, ...prev]);
-    }
-
-    // Navigate to my teams tab to show the new team
+    setMyTeams(prev => [createdTeam, ...prev]);
+    if (createdTeam.isPublic) setPublicTeams(prev => [createdTeam, ...prev]);
     setActiveTab("myTeams");
+    toast.success("Team created successfully!");
   };
 
   const resetNewTeam = () => {
-    setNewTeam({
-      name: "",
-      description: "",
-      cause: "",
-      isPublic: true,
-      avatar: "",
-    });
+    setNewTeam({ name: "", description: "", cause: "", isPublic: true, avatar: "" });
   };
 
   const handleJoinTeam = async (teamId) => {
+    if (!isLoggedIn) return toast.info("Please login to join teams");
     try {
-      console.log("Joining team with ID:", teamId);
-
-      const response = await axios.post(
-        `${backendUrl}/api/team/join/${teamId}`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      console.log("Join team response:", response.data);
-
-      // Show success message
-      alert("Successfully joined the team!");
-
-      // Refresh teams data after joining
+      await axios.post(`${backendUrl}/api/team/join/${teamId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success("Successfully joined the team!");
       fetchTeams();
     } catch (err) {
-      console.error("Error joining team:", err.response?.data || err.message);
-      alert(
-        err.response?.data?.message || "Failed to join team. Please try again."
-      );
+      toast.error(err.response?.data?.message || "Failed to join team");
     }
   };
 
   const handleLeaveTeam = async (teamId) => {
     try {
-      console.log("Leaving team with ID:", teamId);
-
-      const response = await axios.post(
-        `${backendUrl}/api/team/leave/${teamId}`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      console.log("Leave team response:", response.data);
-
-      // Show success message
-      alert("Successfully left the team!");
-
-      // Remove team from my teams - use the correct ID field
-      setMyTeams((prev) =>
-        prev.filter((team) => (team._id || team.id) !== teamId)
-      );
+      await axios.post(`${backendUrl}/api/team/leave/${teamId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success("Left the team");
+      setMyTeams(prev => prev.filter(t => (t._id || t.id) !== teamId));
     } catch (err) {
-      console.error("Error leaving team:", err.response?.data || err.message);
-      alert(
-        err.response?.data?.message || "Failed to leave team. Please try again."
-      );
+      toast.error("Failed to leave team");
     }
   };
 
+  const tabs = [
+    { id: "myTeams", label: "My Teams", icon: HiOutlineUserGroup, count: myTeams.length },
+    { id: "discover", label: "Discover", icon: HiOutlineGlobeAlt, count: publicTeams.length },
+    { id: "leaderboard", label: "Rankings", icon: HiOutlineChartBar },
+  ];
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Teams</h1>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-        >
-          Create Team
-        </button>
-      </div>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 mb-4 rounded">
-          <p>{error}</p>
-        </div>
-      )}
-
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="flex space-x-8">
-          <button
-            onClick={() => setActiveTab("myTeams")}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === "myTeams"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            My Teams
-          </button>
-          <button
-            onClick={() => setActiveTab("discover")}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === "discover"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            Discover Teams
-          </button>
-          <button
-            onClick={() => setActiveTab("leaderboard")}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === "leaderboard"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            Team Leaderboard
-          </button>
-        </nav>
-      </div>
-
-      {loading ? (
-        <div className="text-center py-10">
-          <p>Loading teams...</p>
-        </div>
-      ) : (
-        <>
-          {activeTab === "myTeams" && (
+    <div className="min-h-screen pb-20">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-100 pt-12 pb-8 sticky top-16 z-30">
+        <div className="container mx-auto px-4 lg:px-10">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
             <div>
-              {myTeams.length === 0 ? (
-                <p className=" text-red-700">
-                  <span>
-                    No teams found. Create or join a team to get started!
+              <h1 className="text-4xl font-black text-slate-900 mb-2">Communities</h1>
+              <p className="text-slate-500 font-medium">Join teams to amplify your social impact</p>
+            </div>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-[24px] font-black shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95"
+            >
+              <HiOutlinePlus size={22} /> Create Team
+            </button>
+          </div>
+
+          <div className="flex bg-slate-100/50 p-1.5 rounded-[28px] w-fit">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-sm transition-all ${
+                  activeTab === tab.id ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                <tab.icon size={20} />
+                {tab.label}
+                {tab.count !== undefined && (
+                  <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === tab.id ? 'bg-blue-100 text-blue-600' : 'bg-slate-200 text-slate-500'}`}>
+                    {tab.count}
                   </span>
-                  <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md ml-2"
-                  >
-                    Create Team
-                  </button>
-                </p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {myTeams.map((team) => (
-                    <TeamCard
-                      key={team._id || team.id}
-                      team={team}
-                      handleLeaveTeam={handleLeaveTeam}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          {activeTab === "discover" && (
-            <div>
-              {publicTeams.length === 0 ? (
-                <p>No public teams available to join</p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {publicTeams.map((team) => (
-                    <DiscoverTeamCard
-                      key={team._id || team.id}
-                      team={team}
-                      handleJoinTeam={handleJoinTeam}
-                      myTeams={myTeams}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          {activeTab === "leaderboard" && (
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Most Active Teams</h2>
+                )}
+                {activeTab === tab.id && (
+                  <motion.div layoutId="tab-pill" className="absolute inset-0 bg-white rounded-2xl -z-10 shadow-md border border-slate-100" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-              <div className="bg-white shadow-md rounded-lg overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+      <div className="container mx-auto px-4 lg:px-10 mt-12">
+        <AnimatePresence mode="wait">
+          {loading ? (
+             <motion.div 
+               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+             >
+                {[1,2,3,4,5,6].map(i => <div key={i} className="h-48 bg-slate-100 rounded-[32px] animate-pulse" />)}
+             </motion.div>
+          ) : (
+            <motion.div
+              key={activeTab}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {activeTab === "myTeams" && (
+                <div className="space-y-6">
+                  {myTeams.length === 0 ? (
+                    <div className="text-center py-20 bg-white rounded-[40px] border-2 border-dashed border-slate-100">
+                      <HiOutlineEmojiHappy className="mx-auto text-slate-200 mb-6" size={60} />
+                      <h3 className="text-2xl font-black text-slate-900 mb-4">You haven't joined any teams yet</h3>
+                      <button 
+                        onClick={() => setActiveTab("discover")}
+                        className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all"
                       >
-                        Rank
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Team
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Cause
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Members
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Total Hours
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {topTeams.map((team, index) => (
-                      <LeaderboardTeamCard
-                        key={team._id || team.id}
-                        team={team}
-                        index={index}
-                        handleJoinTeam={handleJoinTeam}
-                        myTeams={myTeams}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                        Explore Teams
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {myTeams.map(team => (
+                        <TeamCard key={team._id || team.id} team={team} handleLeaveTeam={handleLeaveTeam} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === "discover" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {publicTeams.length === 0 ? (
+                    <div className="col-span-full py-20 text-center text-slate-400 font-bold">No public teams found</div>
+                  ) : (
+                    publicTeams.map(team => (
+                      <DiscoverTeamCard key={team._id || team.id} team={team} handleJoinTeam={handleJoinTeam} myTeams={myTeams} />
+                    ))
+                  )}
+                </div>
+              )}
+
+              {activeTab === "leaderboard" && (
+                <div className="max-w-5xl mx-auto bg-white rounded-[40px] shadow-sm border border-slate-100 overflow-hidden">
+                  <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+                    <h3 className="text-xl font-black text-slate-900">Ranked by Total Hours</h3>
+                    <span className="px-4 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-widest">Global Rankings</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Rank</th>
+                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Team Name</th>
+                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cause</th>
+                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Impact</th>
+                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {topTeams.map((team, index) => (
+                          <LeaderboardTeamCard
+                            key={team._id || team.id}
+                            team={team}
+                            index={index}
+                            handleJoinTeam={handleJoinTeam}
+                            myTeams={myTeams}
+                          />
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </motion.div>
           )}
-        </>
-      )}
+        </AnimatePresence>
+      </div>
 
       <CreateTeamModal
         showCreateModal={showCreateModal}

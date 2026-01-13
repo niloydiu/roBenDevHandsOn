@@ -1,17 +1,27 @@
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
-import {
-  FaCalendarAlt,
-  FaClock,
-  FaMedal,
-  FaSpinner,
-  FaUsers,
-} from "react-icons/fa";
+import { 
+  HiOutlineUser, 
+  HiOutlineMail, 
+  HiOutlineBriefcase, 
+  HiOutlineHeart, 
+  HiOutlineTrendingUp, 
+  HiOutlineClock, 
+  HiOutlineStar,
+  HiOutlineUsers,
+  HiOutlineCalendar,
+  HiOutlinePencil,
+  HiOutlineRefresh,
+  HiOutlineCheckCircle,
+  HiOutlineExclamationCircle,
+  HiChevronRight
+} from "react-icons/hi";
+import { motion, AnimatePresence } from "framer-motion";
 import { Appcontext } from "../context/Appcontext";
+import { toast } from "react-toastify";
 
 const Profile = () => {
-  const { userData, backendUrl, token, loadUserProfileData } =
-    useContext(Appcontext);
+  const { userData, backendUrl, token, loadUserProfileData } = useContext(Appcontext);
   const [profileData, setProfileData] = useState({
     name: "",
     email: "",
@@ -27,10 +37,9 @@ const Profile = () => {
     points: 0,
     teams: [],
     events: [],
-    pendingHours: [], // Added pendingHours to state
+    pendingHours: [],
   });
 
-  // Form data for editing
   const [editFormData, setEditFormData] = useState({
     name: "",
     email: "",
@@ -38,16 +47,11 @@ const Profile = () => {
     causes: "",
   });
 
-  // Separate loading states for different scenarios
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-
   const [isEditing, setIsEditing] = useState(false);
-  const [error, setError] = useState("");
 
-  // Fetch user data on component mount and token changes
   useEffect(() => {
     if (token) {
       fetchUserDataInitial();
@@ -56,24 +60,6 @@ const Profile = () => {
     }
   }, [token]);
 
-  // Update profile when tab becomes visible again
-  useEffect(() => {
-    if (!token) return;
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        fetchUserDataBackground();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [token]);
-
-  // Update profileData when userData changes
   useEffect(() => {
     if (userData) {
       updateProfileFromUserData(userData);
@@ -81,7 +67,6 @@ const Profile = () => {
     }
   }, [userData]);
 
-  // Initialize edit form when entering edit mode
   useEffect(() => {
     if (isEditing) {
       setEditFormData({
@@ -93,19 +78,9 @@ const Profile = () => {
     }
   }, [isEditing, profileData]);
 
-  // Helper function to update profile data from user data
   const updateProfileFromUserData = (data) => {
     let eventsData = data.eventsJoined || [];
-
-    // Make sure eventsJoined is an array
-    if (!Array.isArray(eventsData)) {
-      eventsData = [];
-    }
-
-    // Debug log to verify points and volunteer hours
-    console.log(
-      `User data received - Points: ${data.points}, Hours: ${data.volunteerHours}`
-    );
+    if (!Array.isArray(eventsData)) eventsData = [];
 
     setProfileData({
       name: data.name || "",
@@ -126,593 +101,410 @@ const Profile = () => {
     });
   };
 
-  // Initial data fetch (with full loading indicator)
   const fetchUserDataInitial = async () => {
     setIsInitialLoading(true);
     await fetchUserData();
     setIsInitialLoading(false);
   };
 
-  // User-triggered refresh (with refresh indicator)
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
     await fetchUserData();
     setIsRefreshing(false);
+    toast.success("Profile updated");
   };
 
-  // Background refresh (no visible indicators)
-  const fetchUserDataBackground = async () => {
-    setIsBackgroundLoading(true);
-    await fetchUserData(false);
-    setIsBackgroundLoading(false);
-  };
-
-  // Core data fetching function
   const fetchUserData = async (updateGlobalContext = true) => {
     try {
-      // fetching data of the user
       const response = await axios.get(`${backendUrl}/api/user/profile`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const data = response.data;
-
-      if (data.success && data.user) {
-        // Log user data for debugging
-        console.log("Profile data received:", data.user);
-
-        // Also fetch event details if user has joined events
-        if (data.user.eventsJoined && data.user.eventsJoined.length > 0) {
+      if (response.data.success && response.data.user) {
+        const user = response.data.user;
+        if (user.eventsJoined && user.eventsJoined.length > 0) {
           try {
-            // Fetch all events and filter for the ones the user joined
             const eventsResponse = await axios.get(`${backendUrl}/api/event`, {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
+              headers: { Authorization: `Bearer ${token}` },
             });
-
-            if (
-              eventsResponse.data &&
-              eventsResponse.data.success &&
-              Array.isArray(eventsResponse.data.events)
-            ) {
-              // Filter events to only include ones the user joined
-              const joinedEventIds = data.user.eventsJoined.map((event) =>
-                typeof event === "object" ? event._id : event
-              );
-
-              // Enhance user data with full event details
-              const userJoinedEvents = eventsResponse.data.events.filter(
-                (event) => joinedEventIds.includes(event._id)
-              );
-
-              // Add full event data to user data
-              data.user.eventsJoinedDetails = userJoinedEvents;
+            if (eventsResponse.data?.success && Array.isArray(eventsResponse.data.events)) {
+              const joinedEventIds = user.eventsJoined.map(e => typeof e === 'object' ? e._id : e);
+              user.eventsJoinedDetails = eventsResponse.data.events.filter(e => joinedEventIds.includes(e._id));
             }
-          } catch (err) {
-            console.error("Error fetching event details:", err);
-          }
+          } catch (err) { console.error(err); }
         }
-
-        // Update profile with potentially enhanced user data
-        updateProfileFromUserData(data.user);
-
-        // Reset error if successful
-        setError("");
-
-        // Update global context if requested
-        if (updateGlobalContext) {
-          loadUserProfileData();
-        }
+        updateProfileFromUserData(user);
+        if (updateGlobalContext) loadUserProfileData();
       }
     } catch (err) {
-      console.error("Error fetching user data:", err);
-      setError("Failed to fetch user data. Please try again.");
+      toast.error("Failed to sync profile");
     }
   };
 
-  // Handle changes to form fields
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditFormData({
-      ...editFormData,
-      [name]: value,
-    });
-  };
-
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-    setError("");
-
     try {
-      // Convert comma-separated strings to arrays
-      const skills = editFormData.skills
-        .split(",")
-        .map((skill) => skill.trim())
-        .filter((skill) => skill !== "");
-
-      const causes = editFormData.causes
-        .split(",")
-        .map((cause) => cause.trim())
-        .filter((cause) => cause !== "");
-
-      // Prepare update data
-      const updateData = {
+      const skills = editFormData.skills.split(",").map(s => s.trim()).filter(s => s !== "");
+      const causes = editFormData.causes.split(",").map(s => s.trim()).filter(s => s !== "");
+      
+      const response = await axios.put(`${backendUrl}/api/user/profile`, {
         name: editFormData.name,
         email: editFormData.email,
         skills,
         causes,
-      };
-
-      // Send update request - FIXED ENDPOINT HERE
-      const response = await axios.put(
-        `${backendUrl}/api/user/profile`, // Changed from "/api/user/update" to "/api/user/profile"
-        updateData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (response.data.success) {
-        // Update local state and global context
         await fetchUserData(true);
         setIsEditing(false);
-      } else {
-        setError(response.data.message || "Failed to update profile");
+        toast.success("Changes saved!");
       }
     } catch (err) {
-      console.error("Error updating profile:", err);
-      setError(
-        err.response?.data?.message ||
-          "Failed to update profile. Please try again."
-      );
+      toast.error(err.response?.data?.message || "Failed to update profile");
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Cancel editing
-  const handleCancel = () => {
-    setIsEditing(false);
-    setError("");
-  };
-
-  // Show loading indicator when initially loading the profile
-  if (isInitialLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <FaSpinner className="animate-spin text-3xl text-blue-500 mr-2" />
-        <span>Loading your profile...</span>
+  if (isInitialLoading) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+        <p className="font-black text-slate-900 uppercase tracking-widest text-xs">Loading Experience</p>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (!token) {
-    return (
-      <div className="text-center py-10">
-        <p className="text-xl text-red-600">
-          Please login to view your profile
-        </p>
+  if (!token) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center p-12 bg-white rounded-[40px] shadow-xl">
+        <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+          <HiOutlineExclamationCircle size={40} />
+        </div>
+        <h2 className="text-2xl font-black text-slate-900 mb-2">Access Denied</h2>
+        <p className="text-slate-500 font-medium mb-8">Please sign in to view your profile</p>
+        <a href="/login" className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black">Go to Login</a>
+      </motion.div>
+    </div>
+  );
+
+  const StatItem = ({ icon: Icon, value, label, color }) => (
+    <div className={`p-6 rounded-[32px] bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all`}>
+      <div className={`w-12 h-12 rounded-2xl ${color} flex items-center justify-center mb-4`}>
+        <Icon size={24} />
       </div>
-    );
-  }
+      <div className="text-3xl font-black text-slate-900 mb-1">{value}</div>
+      <div className="text-sm font-bold text-slate-400 uppercase tracking-wider">{label}</div>
+    </div>
+  );
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">
-            {isRefreshing ? "Updating Profile..." : "Profile"}
-          </h2>
-          {!isEditing && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-              disabled={isRefreshing}
-            >
-              Edit Profile
-            </button>
-          )}
-        </div>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
-            {error}
-          </div>
-        )}
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 p-4 rounded-lg text-center">
-            <div className="text-3xl font-bold text-blue-600">
-              {profileData.teamsCreated}
-            </div>
-            <div className="text-sm text-gray-600">Teams Created</div>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg text-center">
-            <div className="text-3xl font-bold text-green-600">
-              {profileData.teamsJoined}
-            </div>
-            <div className="text-sm text-gray-600">Teams Joined</div>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg text-center">
-            <div className="text-3xl font-bold text-purple-600">
-              {profileData.eventsCreated}
-            </div>
-            <div className="text-sm text-gray-600">Events Created</div>
-          </div>
-          <div className="bg-amber-50 p-4 rounded-lg text-center">
-            <div className="text-3xl font-bold text-amber-600">
-              {profileData.eventsJoined}
-            </div>
-            <div className="text-sm text-gray-600">Events Joined</div>
-          </div>
-        </div>
-
-        {/* Help stats */}
-        <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-rose-50 p-4 rounded-lg text-center">
-            <div className="text-3xl font-bold text-rose-600">
-              {profileData.helpRequested}
-            </div>
-            <div className="text-sm text-gray-600">Help Requested</div>
-          </div>
-          <div className="bg-cyan-50 p-4 rounded-lg text-center">
-            <div className="text-3xl font-bold text-cyan-600">
-              {profileData.helpOffered}
-            </div>
-            <div className="text-sm text-gray-600">Help Offered</div>
-          </div>
-        </div>
-
-        {/* User Points and Hours */}
-        <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-yellow-50 p-4 rounded-lg text-center flex flex-col items-center">
-            <FaMedal className="text-2xl text-yellow-500 mb-1" />
-            <div className="text-3xl font-bold text-yellow-600">
-              {profileData.points}
-            </div>
-            <div className="text-sm text-gray-600">Points Earned</div>
-          </div>
-          <div className="bg-indigo-50 p-4 rounded-lg text-center flex flex-col items-center">
-            <FaClock className="text-2xl text-indigo-500 mb-1" />
-            <div className="text-3xl font-bold text-indigo-600">
-              {profileData.volunteerHours}
-            </div>
-            <div className="text-sm text-gray-600">Volunteer Hours</div>
-          </div>
-        </div>
-
-        {/* Pending Hours Section - NEW */}
-        {profileData.pendingHours && profileData.pendingHours.length > 0 && (
-          <div className="mt-6 border-t pt-4">
-            <h3 className="text-lg font-semibold mb-3">
-              Volunteer Hours Status
-            </h3>
-            <div className="space-y-3">
-              {profileData.pendingHours.map((pending) => (
-                <div
-                  key={pending._id}
-                  className={`p-3 rounded-lg border ${
-                    pending.status === "approved"
-                      ? "bg-green-50 border-green-200"
-                      : pending.status === "rejected"
-                      ? "bg-red-50 border-red-200"
-                      : "bg-yellow-50 border-yellow-200"
-                  }`}
+    <div className="min-h-screen bg-slate-50 pb-20">
+      {/* Profile Header */}
+      <div className="bg-slate-900 pt-20 pb-40 px-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px] -mr-40 -mt-40" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px] -ml-20 -mb-20" />
+        
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+            <div className="flex items-center gap-8">
+              <div className="w-32 h-32 rounded-[48px] bg-gradient-to-br from-blue-500 to-indigo-600 p-1 shadow-2xl">
+                <div className="w-full h-full rounded-[40px] bg-white flex items-center justify-center text-4xl font-black text-blue-600 tracking-tighter">
+                  {profileData.name.charAt(0)}
+                </div>
+              </div>
+              <div>
+                <motion.h1 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-5xl font-black text-white mb-2 tracking-tight"
                 >
-                  <div className="flex justify-between">
-                    <div>
-                      <p className="font-medium">
-                        {pending.event?.title || "Event"}
-                      </p>
-                      <p className="text-sm">
-                        {pending.hours} hours •{" "}
-                        {new Date(pending.date).toLocaleDateString()}
-                      </p>
+                  {profileData.name}
+                </motion.h1>
+                <p className="text-blue-200/60 font-medium text-lg flex items-center gap-2">
+                  <HiOutlineMail /> {profileData.email}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-4">
+              <button 
+                onClick={handleManualRefresh}
+                className="p-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all border border-white/10 group"
+              >
+                <HiOutlineRefresh size={24} className={isRefreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"} />
+              </button>
+              <button 
+                onClick={() => setIsEditing(true)}
+                className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black transition-all shadow-xl shadow-blue-500/25 flex items-center gap-2"
+              >
+                <HiOutlinePencil size={20} /> Edit Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-6 -mt-20 relative z-20">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Main Dashboard Stats */}
+          <div className="lg:col-span-2 space-y-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatItem icon={HiOutlineUsers} value={profileData.teamsJoined} label="Teams" color="bg-blue-50 text-blue-600" />
+              <StatItem icon={HiOutlineCalendar} value={profileData.eventsJoined} label="Events" color="bg-indigo-50 text-indigo-600" />
+              <StatItem icon={HiOutlineStar} value={profileData.points} label="Points" color="bg-amber-50 text-amber-600" />
+              <StatItem icon={HiOutlineClock} value={profileData.volunteerHours} label="Hours" color="bg-emerald-50 text-emerald-600" />
+            </div>
+
+            {/* Content Sections */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Skills */}
+              <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
+                    <HiOutlineBriefcase size={20} />
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900">Professional Skills</h3>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {profileData.skills.length > 0 ? profileData.skills.map((skill, i) => (
+                    <span key={i} className="px-5 py-2.5 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm border border-slate-100 italic transition-all hover:bg-white hover:border-violet-200">
+                      {skill}
+                    </span>
+                  )) : (
+                    <p className="text-slate-400 font-medium">No skills showcased yet.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Causes */}
+              <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center">
+                    <HiOutlineHeart size={20} />
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900">Passionate Causes</h3>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {profileData.causes.length > 0 ? profileData.causes.map((cause, i) => (
+                    <span key={i} className="px-5 py-2.5 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm border border-slate-100 transition-all hover:bg-white hover:border-pink-200">
+                      # {cause}
+                    </span>
+                  )) : (
+                    <p className="text-slate-400 font-medium">No causes listed yet.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Activity History */}
+            <div className="bg-white rounded-[40px] p-10 border border-slate-100 shadow-sm">
+              <h3 className="text-2xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                <HiOutlineTrendingUp className="text-blue-600" /> Recent Impact
+              </h3>
+              
+              <div className="space-y-6">
+                {profileData.events.length > 0 ? profileData.events.slice(0, 3).map((event, i) => (
+                  <div key={i} className="group flex items-center justify-between p-6 rounded-3xl bg-slate-50/50 hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all">
+                    <div className="flex items-center gap-6">
+                      <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-600 font-black">
+                        {i + 1}
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+                          {typeof event === 'object' ? event.title : "Volunteer Initiative"}
+                        </h4>
+                        <p className="text-slate-500 font-bold text-sm">
+                          {typeof event === 'object' && event.date ? new Date(event.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : "Recently Activity"}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          pending.status === "approved"
-                            ? "bg-green-100 text-green-800"
-                            : pending.status === "rejected"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {pending.status.charAt(0).toUpperCase() +
-                          pending.status.slice(1)}
-                      </span>
+                    <a href={`/events/${typeof event === 'object' ? event._id : event}`} className="p-3 bg-white text-slate-400 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                      <HiChevronRight size={20} />
+                    </a>
+                  </div>
+                )) : (
+                  <div className="text-center py-12">
+                    <p className="text-slate-400 font-bold mb-4">You haven't made your first impact yet.</p>
+                    <a href="/events" className="text-blue-600 font-black hover:underline">Explore Opportunities</a>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar - Requests & Teams */}
+          <div className="space-y-8">
+            {/* Status Section */}
+            <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full -mr-16 -mt-16" />
+              <h3 className="text-xl font-black text-slate-900 mb-6 relative">Verification Center</h3>
+              
+              {profileData.pendingHours.length > 0 ? (
+                <div className="space-y-4">
+                  {profileData.pendingHours.map((pending, i) => (
+                    <div key={i} className={`p-4 rounded-3xl border ${
+                      pending.status === 'approved' ? 'bg-emerald-50/50 border-emerald-100' : 
+                      pending.status === 'rejected' ? 'bg-rose-50/50 border-rose-100' : 'bg-amber-50/50 border-amber-100'
+                    }`}>
+                      <div className="flex justify-between items-start mb-2">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                          pending.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 
+                          pending.status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {pending.status}
+                        </span>
+                        <span className="text-xs font-bold text-slate-400">{new Date(pending.date).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-sm font-black text-slate-800">{pending.hours} Hours requested</p>
+                      <p className="text-xs font-bold text-slate-500 truncate">{pending.event?.title || 'Unknown Event'}</p>
                     </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <HiOutlineCheckCircle className="mx-auto text-slate-200 mb-2" size={32} />
+                  <p className="text-slate-400 font-bold text-sm">All entries verified.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Contribution Stats */}
+            <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-[40px] p-8 text-white shadow-xl shadow-indigo-500/20">
+              <h3 className="text-xl font-black mb-6">Social Influence</h3>
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center">
+                    <HiOutlineUsers size={24} />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black">{profileData.helpOffered}</div>
+                    <div className="text-xs font-bold text-indigo-100 uppercase tracking-widest">Help Offered</div>
                   </div>
                 </div>
-              ))}
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center">
+                    <HiOutlineUsers size={24} />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-black">{profileData.helpRequested}</div>
+                    <div className="text-xs font-bold text-indigo-100 uppercase tracking-widest">Requests Sent</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* User Info Display/Edit Form */}
-        <div className="mt-6 border-t pt-4">
-          <h3 className="text-lg font-semibold mb-3">User Information</h3>
+      {/* Edit Modal Overlay */}
+      <AnimatePresence>
+        {isEditing && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsEditing(false)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div 
+               initial={{ opacity: 0, scale: 0.95, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+               className="relative w-full max-w-xl bg-white rounded-[48px] p-8 md:p-12 shadow-2xl overflow-y-auto max-h-[90vh]"
+            >
+              <div className="mb-10 text-center">
+                <h2 className="text-3xl font-black text-slate-900 mb-2">Update Identity</h2>
+                <p className="text-slate-500 font-medium">Customize your professional profile</p>
+              </div>
 
-          {isEditing ? (
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={editFormData.name}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                  <div className="relative">
+                    <HiOutlineUser className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <input 
+                      type="text" 
+                      name="name" 
+                      value={editFormData.name} 
+                      onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 border-none rounded-3xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900" 
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={editFormData.email}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                  <div className="relative">
+                    <HiOutlineMail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <input 
+                      type="email" 
+                      name="email" 
+                      value={editFormData.email} 
+                      onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 border-none rounded-3xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900" 
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Skills (comma-separated)
-                  </label>
-                  <input
-                    type="text"
-                    name="skills"
-                    value={editFormData.skills}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="e.g. Cooking, Teaching, Carpentry"
-                  />
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Expertise (Comma separated)</label>
+                  <div className="relative">
+                    <HiOutlineBriefcase className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <input 
+                      type="text" 
+                      name="skills" 
+                      value={editFormData.skills} 
+                      placeholder="UI Design, Writing, Gardening"
+                      onChange={(e) => setEditFormData({...editFormData, skills: e.target.value})}
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 border-none rounded-3xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900" 
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Causes (comma-separated)
-                  </label>
-                  <input
-                    type="text"
-                    name="causes"
-                    value={editFormData.causes}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="e.g. Environment, Education, Elderly"
-                  />
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Causes (Comma separated)</label>
+                  <div className="relative">
+                    <HiOutlineHeart className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <input 
+                      type="text" 
+                      name="causes" 
+                      value={editFormData.causes} 
+                      placeholder="Climate, Education, Health"
+                      onChange={(e) => setEditFormData({...editFormData, causes: e.target.value})}
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 border-none rounded-3xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900" 
+                    />
+                  </div>
                 </div>
 
-                <div className="flex space-x-4 pt-3">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center"
+                <div className="flex gap-4 pt-4">
+                  <button 
+                    type="submit" 
                     disabled={isSaving}
+                    className="flex-1 py-5 bg-blue-600 text-white rounded-3xl font-black shadow-xl shadow-blue-500/30 hover:bg-blue-700 transition-all active:scale-[0.98] disabled:opacity-50"
                   >
-                    {isSaving && <FaSpinner className="animate-spin mr-2" />}
-                    {isSaving ? "Saving..." : "Save Changes"}
+                    {isSaving ? "Synchronizing..." : "Save Changes"}
                   </button>
-
-                  <button
-                    type="button"
-                    onClick={handleCancel}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100"
-                    disabled={isSaving}
+                  <button 
+                    type="button" 
+                    onClick={() => setIsEditing(false)}
+                    className="px-8 py-5 bg-slate-100 text-slate-600 rounded-3xl font-black hover:bg-slate-200 transition-all"
                   >
                     Cancel
                   </button>
                 </div>
-              </div>
-            </form>
-          ) : (
-            <>
-              <p>
-                <strong>Name:</strong> {profileData.name}
-              </p>
-              <p>
-                <strong>Email:</strong> {profileData.email}
-              </p>
-            </>
-          )}
-        </div>
-
-        {/* Skills & Causes */}
-        {!isEditing && (
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h4 className="font-semibold mb-2">Skills</h4>
-              <div className="flex flex-wrap gap-2">
-                {profileData.skills && profileData.skills.length > 0 ? (
-                  profileData.skills.map((skill, index) => (
-                    <span
-                      key={index}
-                      className="bg-gray-200 px-3 py-1 rounded-full text-sm"
-                    >
-                      {skill}
-                    </span>
-                  ))
-                ) : (
-                  <p className="text-gray-500">No skills added yet</p>
-                )}
-              </div>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">Causes</h4>
-              <div className="flex flex-wrap gap-2">
-                {profileData.causes && profileData.causes.length > 0 ? (
-                  profileData.causes.map((cause, index) => (
-                    <span
-                      key={index}
-                      className="bg-gray-200 px-3 py-1 rounded-full text-sm"
-                    >
-                      {cause}
-                    </span>
-                  ))
-                ) : (
-                  <p className="text-gray-500">No causes added yet</p>
-                )}
-              </div>
-            </div>
+              </form>
+            </motion.div>
           </div>
         )}
-
-        {/* Events Section */}
-        <div className="mt-8">
-          <h3 className="text-xl font-semibold mb-4 flex items-center">
-            <FaCalendarAlt className="mr-2 text-blue-500" /> Your Events
-          </h3>
-
-          {profileData.events && profileData.events.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {profileData.events.map((event, index) => (
-                <div
-                  key={typeof event === "object" ? event._id : `event-${index}`}
-                  className="border rounded-lg p-4 hover:bg-gray-50 hover:shadow transition-all"
-                >
-                  <h4 className="font-medium text-blue-700">
-                    {typeof event === "object" && event.title
-                      ? event.title
-                      : "Event Details"}
-                  </h4>
-                  {typeof event === "object" && event.date ? (
-                    <>
-                      <p className="text-sm text-gray-600 mt-2">
-                        <strong>Date:</strong>{" "}
-                        {new Date(event.date).toLocaleDateString()}
-                      </p>
-                      {event.location && (
-                        <p className="text-sm text-gray-600">
-                          <strong>Location:</strong> {event.location}
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-sm text-gray-500 mt-2">
-                      View event details on the Events page
-                    </p>
-                  )}
-                  <a
-                    href={`/events/${
-                      typeof event === "object" ? event._id : event
-                    }`}
-                    className="mt-2 inline-block text-sm text-blue-500 hover:underline"
-                  >
-                    View Event Details
-                  </a>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-gray-50 rounded-lg p-6 text-center">
-              <FaCalendarAlt className="mx-auto text-gray-400 text-3xl mb-3" />
-              <p className="text-gray-500">
-                You haven't joined any events yet.
-              </p>
-              <a
-                href="/events"
-                className="mt-3 inline-block px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-              >
-                Browse Events
-              </a>
-            </div>
-          )}
-        </div>
-
-        {/* Teams Section */}
-        <div className="mt-8">
-          <h3 className="text-xl font-semibold mb-4 flex items-center">
-            <FaUsers className="mr-2 text-green-500" /> Your Teams
-          </h3>
-
-          {profileData.teams && profileData.teams.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {profileData.teams.map((team) => (
-                <div
-                  key={team._id}
-                  className="border rounded-lg p-4 flex items-center hover:bg-gray-50 hover:shadow transition-all"
-                >
-                  <div className="w-12 h-12 bg-gray-200 rounded-full overflow-hidden mr-4">
-                    {team.avatar ? (
-                      <img
-                        src={team.avatar}
-                        alt={team.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-300">
-                        <FaUsers className="text-gray-500" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-grow">
-                    <h4 className="font-medium text-green-700">{team.name}</h4>
-                    <p className="text-sm text-gray-600">{team.cause}</p>
-                    <p className="text-xs text-gray-500">
-                      {team.memberCount || team.members?.length || "?"} members
-                    </p>
-                  </div>
-                  <a
-                    href={`/teams/${team._id}`}
-                    className="ml-auto text-sm text-green-500 hover:underline"
-                  >
-                    View Team
-                  </a>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-gray-50 rounded-lg p-6 text-center">
-              <FaUsers className="mx-auto text-gray-400 text-3xl mb-3" />
-              <p className="text-gray-500">You haven't joined any teams yet.</p>
-              <a
-                href="/teams"
-                className="mt-3 inline-block px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
-              >
-                Browse Teams
-              </a>
-            </div>
-          )}
-        </div>
-
-        {/* Refresh Button */}
-        {!isEditing && (
-          <div className="mt-8 text-center border-t pt-6">
-            <button
-              onClick={handleManualRefresh}
-              disabled={isRefreshing}
-              className={`
-                px-6 py-2 rounded flex items-center justify-center mx-auto
-                ${
-                  isRefreshing
-                    ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
-                }
-              `}
-            >
-              {isRefreshing && <FaSpinner className="animate-spin mr-2" />}
-              {isRefreshing ? "Refreshing Profile..." : "Refresh Profile Data"}
-            </button>
-          </div>
-        )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 };

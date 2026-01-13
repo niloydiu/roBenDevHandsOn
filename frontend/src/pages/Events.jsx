@@ -1,7 +1,10 @@
 import axios from "axios";
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Appcontext } from "../context/Appcontext";
+import { motion, AnimatePresence } from "framer-motion";
+import { HiOutlineSearch, HiOutlineFilter, HiOutlineCalendar, HiOutlineLocationMarker, HiOutlinePlus, HiOutlineCheckCircle, HiOutlineClock } from "react-icons/hi";
+import { toast } from "react-toastify";
 
 function Events() {
   const {
@@ -15,449 +18,238 @@ function Events() {
   } = useContext(Appcontext);
   const navigate = useNavigate();
   const [isJoining, setIsJoining] = useState(false);
-  const [joinedEventIds, setJoinedEventIds] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
     category: "",
     location: "",
-    date: "",
     showMyEvents: false,
   });
 
-  const handleFilterChange = (e) => {
-    setFilters({
-      ...filters,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  // Toggle function for "Show My Events"
-  const handleMyEventsToggle = () => {
-    setFilters({
-      ...filters,
-      showMyEvents: !filters.showMyEvents,
-    });
-  };
-
-  // Function to check if an event was created by the current user
-  const isUserEvent = (event) => {
-    if (!userData || !event.createdBy) return false;
-
-    // Handle different data structures for createdBy
-    if (typeof event.createdBy === "object") {
-      return event.createdBy._id === userData._id;
-    }
-    return event.createdBy === userData._id;
-  };
-
-  // Function to handle joining an event
   const handleJoinEvent = async (eventId, e) => {
-    // Stop event propagation so it doesn't trigger any parent elements' click events
     e.preventDefault();
-    e.stopPropagation();
-
     if (!token) {
-      alert("Please login to join this event");
+      toast.info("Please login to join");
       navigate("/login");
       return;
     }
 
     try {
       setIsJoining(true);
-      await axios.post(
+      const res = await axios.post(
         `${backendUrl}/api/event/join/${eventId}`,
         {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      // Add the joined event ID to our state
-      setJoinedEventIds((prev) => [...prev, eventId]);
-
-      // Refresh events to get updated participant counts
-      await fetchAllEvents();
-
-      alert("You've joined this event successfully!");
+      if (res.data.success) {
+        toast.success("Joined successfully!");
+        fetchAllEvents();
+      }
     } catch (error) {
-      const errorMsg =
-        error.response?.data?.message ||
-        "Failed to join event. Please try again.";
-      alert(errorMsg);
+      toast.error(error.response?.data?.message || "Failed to join");
     } finally {
       setIsJoining(false);
     }
   };
 
-  const isUserParticipant = (event) => {
-    // Check if event is in our locally joined events
-    if (joinedEventIds.includes(event._id)) return true;
-
-    // Check if user is already a participant
-    if (!userData || !event.participants) return false;
-
-    return event.participants.some((participant) => {
-      if (typeof participant === "object") {
-        return (
-          participant._id === userData._id || participant.user === userData._id
-        );
-      }
-      return participant === userData._id;
-    });
-  };
-
-  const isEventFull = (event) => {
-    const participantsCount = event.participants?.length || 0;
-    return participantsCount >= event.maxParticipants;
-  };
-
-  // Filter events based on user filters
-  const filteredEvents = events
-    .filter((event) => {
-      // Category filter
-      const matchesCategory =
-        !filters.category || event.category === filters.category;
-
-      // Location filter
-      const matchesLocation =
-        !filters.location ||
-        event.location.toLowerCase().includes(filters.location.toLowerCase());
-
-      // Date filter - Fix by normalizing date formats
-      let matchesDate = true;
-      if (filters.date) {
-        // Get just the date part in YYYY-MM-DD format from the event date
-        const eventDate = new Date(event.date).toISOString().split("T")[0];
-        // Compare with the filter date which is already in YYYY-MM-DD format
-        matchesDate = eventDate === filters.date;
-      }
-
-      // Creator filter - only apply if showMyEvents is true
-      const matchesCreator = !filters.showMyEvents || isUserEvent(event);
-
-      return (
-        matchesCategory && matchesLocation && matchesDate && matchesCreator
+  const filteredEvents = useMemo(() => {
+    return events.filter(event => {
+      const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          event.location.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = !filters.category || event.category === filters.category;
+      
+      const isCreator = userData && (
+        (typeof event.createdBy === 'object' ? event.createdBy._id === userData._id : event.createdBy === userData._id)
       );
-    })
-    // Sort events by date (closest dates first)
-    .sort((a, b) => {
-      // Convert string dates to Date objects for proper comparison
-      const dateA = new Date(a.date);
-      const dateB = new Date(b.date);
-
-      // Filter out past events
-      const now = new Date();
-      const isPastA = dateA < now;
-      const isPastB = dateB < now;
-
-      // If one is past and one is future, future comes first
-      if (isPastA && !isPastB) return 1;
-      if (!isPastA && isPastB) return -1;
-
-      // Otherwise sort by closest date
-      return dateA - dateB;
+      
+      const matchesMyEvents = !filters.showMyEvents || isCreator;
+      
+      return matchesSearch && matchesCategory && matchesMyEvents;
+    }).sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        const now = new Date();
+        const isPastA = dateA < now;
+        const isPastB = dateB < now;
+        if (isPastA && !isPastB) return 1;
+        if (!isPastA && isPastB) return -1;
+        return dateA - dateB;
     });
+  }, [events, searchQuery, filters, userData]);
+
+  const categories = ["Environmental", "Education", "Hunger Relief", "Community Support", "Healthcare", "Animal Welfare", "Other"];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header Section */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Volunteer Events</h1>
-        <Link
-          to="/create-event"
-          className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md shadow transition duration-300"
-        >
-          Create Event
-        </Link>
-      </div>
-      {/* Filter Section  */}
-      <div className="bg-gray-100 p-4 rounded-lg shadow-md mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* First row */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Category</label>
-            <select
-              name="category"
-              value={filters.category}
-              onChange={handleFilterChange}
-              className="w-full p-2 border border-gray-300 bg-white rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">All Categories</option>
-              <option value="Environmental">Environmental</option>
-              <option value="Education">Education</option>
-              <option value="Hunger Relief">Hunger Relief</option>
-              <option value="Community Support">Community Support</option>
-              <option value="Healthcare">Healthcare</option>
-              <option value="Animal Welfare">Animal Welfare</option>
-              <option value="Crisis Response">Crisis Response</option>
-              <option value="Arts & Culture">Arts & Culture</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Location</label>
-            <input
-              type="text"
-              name="location"
-              value={filters.location}
-              onChange={handleFilterChange}
-              placeholder="Enter location"
-              className="w-full p-2 border border-gray-300 bg-white rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          {/* Second row */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Date</label>
-            <input
-              type="date"
-              name="date"
-              value={filters.date}
-              onChange={handleFilterChange}
-              className="w-full p-2 border border-gray-300 bg-white rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          {/* Add My Events toggle filter */}
-          {isLoggedIn ? (
+    <div className="min-h-screen pb-20">
+      {/* Header & Search */}
+      <div className="bg-white border-b border-slate-100 sticky top-16 z-30 pt-8 pb-6">
+        <div className="container mx-auto px-4 lg:px-10">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
             <div>
-              <label className="block text-sm font-medium mb-1">Creator</label>
-              <div className="bg-white border border-gray-300 rounded-md px-4 py-3 flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">
-                  Show only my events
-                </span>
-                <button
-                  type="button"
-                  onClick={handleMyEventsToggle}
-                  className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  role="switch"
-                  aria-checked={filters.showMyEvents}
-                  style={{
-                    backgroundColor: filters.showMyEvents
-                      ? "#2563EB"
-                      : "#E5E7EB",
-                  }}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                      filters.showMyEvents ? "translate-x-5" : "translate-x-0"
-                    }`}
-                  />
-                </button>
-              </div>
+              <h1 className="text-4xl font-black text-slate-900 mb-2">Explore Events</h1>
+              <p className="text-slate-500 font-medium">Find your next opportunity to make an impact</p>
             </div>
-          ) : (
-            // Empty placeholder div when not logged in to maintain grid layout
-            <div className="hidden md:block"></div>
-          )}
+            <Link
+              to="/create-event"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
+            >
+              <HiOutlinePlus size={20} /> Create Event
+            </Link>
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex-grow relative">
+              <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+              <input
+                type="text"
+                placeholder="Search by title or location..."
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-2 lg:pb-0 no-scrollbar">
+              <select
+                className="px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-600 min-w-[160px]"
+                value={filters.category}
+                onChange={(e) => setFilters({...filters, category: e.target.value})}
+              >
+                <option value="">All Categories</option>
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              
+              {isLoggedIn && (
+                <button
+                  onClick={() => setFilters({...filters, showMyEvents: !filters.showMyEvents})}
+                  className={`px-6 py-4 rounded-2xl font-bold transition-all whitespace-nowrap ${
+                    filters.showMyEvents ? "bg-blue-600 text-white" : "bg-slate-50 text-slate-600"
+                  }`}
+                >
+                  My Events
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-      {/* Event Listings */}
-      {loadingEvents ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      ) : filteredEvents.length === 0 ? (
-        <div className="text-center py-12">
-          <svg
-            className="w-16 h-16 mx-auto text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-          </svg>
-          <p className="mt-4 text-xl text-gray-500">
-            No events found matching your filters.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEvents.map((event) => (
-            <div
-              key={event._id}
-              className="border border-gray-200 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white"
-            >
-              <div className="h-36 bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-medium relative">
-                {event.category}
-                {isUserEvent(event) && (
-                  <span className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                    Your Event
-                  </span>
-                )}
-              </div>
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-xl font-semibold text-gray-800 line-clamp-1">
-                    {event.title}
-                  </h2>
-                  {/* Date badge that shows how soon the event is */}
-                  {(() => {
-                    const eventDate = new Date(event.date);
-                    const today = new Date();
-                    const diffTime = eventDate - today;
-                    const diffDays = Math.ceil(
-                      diffTime / (1000 * 60 * 60 * 24)
-                    );
 
-                    if (diffDays < 0) {
-                      return (
-                        <span className="inline-flex px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600 whitespace-nowrap">
-                          Past event
-                        </span>
-                      );
-                    } else if (diffDays === 0) {
-                      return (
-                        <span className="inline-flex px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800 whitespace-nowrap">
-                          Today
-                        </span>
-                      );
-                    } else if (diffDays === 1) {
-                      return (
-                        <span className="inline-flex px-3 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800 whitespace-nowrap">
-                          Tomorrow
-                        </span>
-                      );
-                    } else if (diffDays <= 7) {
-                      return (
-                        <span className="inline-flex px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 whitespace-nowrap">
-                          This week
-                        </span>
-                      );
-                    } else {
-                      return (
-                        <span className="inline-flex px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 whitespace-nowrap">
-                          {`In ${diffDays} days`}
-                        </span>
-                      );
-                    }
-                  })()}
-                </div>
-                <p className="text-gray-600 mb-4 line-clamp-2">
-                  {event.description}
-                </p>
-                <div className="text-sm text-gray-500 space-y-2">
-                  <p className="flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-2 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      ></path>
-                    </svg>
-                    <span className="font-medium">Date:</span>{" "}
-                    {new Date(event.date).toLocaleDateString()}
-                  </p>
-                  <p className="flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-2 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                      ></path>
-                    </svg>
-                    <span className="font-medium">Time:</span> {event.startTime}{" "}
-                    - {event.endTime}
-                  </p>
-                  <p className="flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-2 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                      ></path>
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                      ></path>
-                    </svg>
-                    <span className="font-medium">Location:</span>{" "}
-                    {event.location}
-                  </p>
-                </div>
-
-                {/* Participants Progress */}
-                <div className="mt-4">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Participants</span>
-                    <span className="font-medium">
-                      {event.participants?.length || 0}/{event.maxParticipants}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{
-                        width: `${Math.min(
-                          ((event.participants?.length || 0) /
-                            event.maxParticipants) *
-                            100,
-                          100
-                        )}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* Buttons */}
-                <div className="mt-5 flex space-x-3 pt-3 border-t border-gray-100">
-                  <button
-                    onClick={(e) => handleJoinEvent(event._id, e)}
-                    disabled={
-                      isJoining ||
-                      isUserParticipant(event) ||
-                      isEventFull(event)
-                    }
-                    className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors duration-300 ${
-                      isUserParticipant(event)
-                        ? "bg-green-500 text-white cursor-default"
-                        : isEventFull(event)
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-blue-600 hover:bg-blue-700 text-white"
-                    }`}
-                  >
-                    {isUserParticipant(event)
-                      ? "Joined"
-                      : isEventFull(event)
-                      ? "Full"
-                      : "Join Event"}
-                  </button>
-                  <Link
-                    to={`/events/${event._id}`}
-                    className="flex-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 py-2 px-4 rounded-md font-medium text-center transition-colors duration-300"
-                  >
-                    View Details
-                  </Link>
-                </div>
-              </div>
+      <div className="container mx-auto px-4 lg:px-10 mt-12">
+        {loadingEvents ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-96 bg-slate-100 rounded-[32px] animate-pulse" />)}
+          </div>
+        ) : filteredEvents.length === 0 ? (
+          <div className="text-center py-20 bg-slate-50 rounded-[40px] border-2 border-dashed border-slate-200">
+            <div className="w-20 h-20 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-400">
+              <HiOutlineFilter size={40} />
             </div>
-          ))}
-        </div>
-      )}
+            <h3 className="text-2xl font-bold text-slate-900 mb-2">No events found</h3>
+            <p className="text-slate-500">Try adjusting your filters or search terms</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <AnimatePresence mode="popLayout">
+              {filteredEvents.map((event, idx) => {
+                const isJoined = userData && event.participants?.some(p => (typeof p === 'object' ? p._id === userData._id : p === userData._id));
+                const isFull = (event.participants?.length || 0) >= event.maxParticipants;
+                const isCreator = userData && (
+                    (typeof event.createdBy === 'object' ? event.createdBy._id === userData._id : event.createdBy === userData._id)
+                );
+                
+                return (
+                  <motion.div
+                    layout
+                    key={event._id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.3, delay: idx * 0.05 }}
+                    className="group bg-white rounded-[32px] border border-slate-100 hover:border-blue-100 hover:shadow-2xl hover:shadow-blue-500/5 transition-all flex flex-col"
+                  >
+                    <div className="p-8 flex flex-col h-full">
+                      <div className="flex justify-between items-start mb-6">
+                        <span className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
+                          {event.category}
+                        </span>
+                        <div className="flex flex-col items-end gap-1">
+                          {isJoined && (
+                            <div className="text-green-500 flex items-center gap-1 text-xs font-bold">
+                              <HiOutlineCheckCircle size={18} /> Joined
+                            </div>
+                          )}
+                          {isCreator && (
+                            <div className="text-blue-500 flex items-center gap-1 text-[10px] font-black uppercase">
+                              Your Event
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <h3 className="text-2xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors leading-tight line-clamp-2 min-h-[4rem]">
+                        {event.title}
+                      </h3>
+                      
+                      <p className="text-slate-500 text-sm line-clamp-2 mb-6 leading-relaxed flex-grow">
+                        {event.description}
+                      </p>
+
+                      <div className="grid grid-cols-2 gap-4 mb-8">
+                        <div className="flex items-center gap-3 text-slate-600 font-semibold text-xs bg-slate-50 p-3 rounded-xl border border-slate-100">
+                          <HiOutlineCalendar className="text-blue-500 shrink-0" size={18} />
+                          <span className="truncate">{new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-slate-600 font-semibold text-xs bg-slate-50 p-3 rounded-xl border border-slate-100">
+                          <HiOutlineClock className="text-blue-500 shrink-0" size={18} />
+                          <span className="truncate">{event.startTime}</span>
+                        </div>
+                        <div className="col-span-2 flex items-center gap-3 text-slate-600 font-semibold text-xs bg-slate-50 p-3 rounded-xl border border-slate-100">
+                          <HiOutlineLocationMarker className="text-blue-500 shrink-0" size={18} />
+                          <span className="truncate">{event.location}</span>
+                        </div>
+                      </div>
+
+                      <div className="mb-8">
+                        <div className="flex justify-between items-end mb-2">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Capacity</span>
+                          <span className="text-sm font-bold text-slate-900">{event.participants?.length || 0} / {event.maxParticipants}</span>
+                        </div>
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            whileInView={{ width: `${((event.participants?.length || 0) / event.maxParticipants) * 100}%` }}
+                            className={`h-full rounded-full ${isFull ? 'bg-red-400' : 'bg-blue-600'}`}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <Link
+                          to={`/events/${event._id}`}
+                          className="flex-1 py-4 text-center text-sm font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-all"
+                        >
+                          Details
+                        </Link>
+                        {!isJoined && (
+                          <button
+                            onClick={(e) => handleJoinEvent(event._id, e)}
+                            disabled={isJoining || isFull}
+                            className={`flex-[1.5] py-4 rounded-2xl text-sm font-bold shadow-lg transition-all active:scale-95 ${
+                              isFull 
+                              ? "bg-slate-200 text-slate-400 shadow-none cursor-not-allowed" 
+                              : "bg-blue-600 text-white shadow-blue-200 hover:bg-blue-700"
+                            }`}
+                          >
+                            {isFull ? "Full" : "Join Now"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
