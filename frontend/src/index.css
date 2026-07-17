@@ -9,7 +9,7 @@
   }
 
   body {
-    @apply antialiased text-slate-900 bg-slate-50/50 dark:text-slate-100 dark:bg-slate-950 transition-colors duration-300 selection:bg-blue-100 selection:text-blue-900;
+    @apply antialiased text-slate-900 bg-[#f8fafc] dark:text-[#f8fafc] dark:bg-[#020617] transition-colors duration-300 selection:bg-emerald-100 selection:text-emerald-900;
   }
 
   /* Custom Scrollbar for a premium feel */

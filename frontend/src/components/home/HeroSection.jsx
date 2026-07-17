@@ -33,16 +33,16 @@ const HeroSection = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-sm font-semibold mb-6 border border-blue-100 dark:border-blue-800/30">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-sm font-semibold mb-6 border border-emerald-100 dark:border-emerald-900/20">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600 dark:bg-blue-400"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-450 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600 dark:bg-emerald-400"></span>
                 </span>
                 Join 500+ Active Volunteers
               </div>
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] mb-6 text-slate-900 dark:text-white">
-                Lend a <span className="text-blue-600 dark:text-blue-400">Hand</span>,<br />
-                Shape a <span className="text-blue-600 dark:text-blue-400">Future</span>.
+                Lend a <span className="text-emerald-600 dark:text-emerald-400">Hand</span>,<br />
+                Shape a <span className="text-emerald-600 dark:text-emerald-400">Future</span>.
               </h1>
               <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
                 Connect with local opportunities, build impactful teams, and track your social contribution in real-time. Join the community-driven movement that makes a difference.
@@ -52,14 +52,14 @@ const HeroSection = () => {
                 {isLoggedIn ? (
                   <button
                     onClick={navigateToHelpRequests}
-                    className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-750 text-white rounded-2xl font-bold shadow-xl shadow-blue-200 dark:shadow-none transition-all hover:-translate-y-1 flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-xl shadow-emerald-500/20 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     Explore Requests <HiArrowRight />
                   </button>
                 ) : (
                   <Link
                     to="/signup"
-                    className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-750 text-white rounded-2xl font-bold shadow-xl shadow-blue-200 dark:shadow-none transition-all hover:-translate-y-1 flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-xl shadow-emerald-500/20 hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
                   >
                     Start Volunteering <HiArrowRight />
                   </Link>
@@ -100,7 +100,7 @@ const HeroSection = () => {
             >
               {/* Decorative Background Elements */}
               <div className="absolute -top-6 -right-6 w-32 h-32 bg-yellow-100 dark:bg-yellow-950/20 rounded-3xl -z-10 rotate-12 blur-sm" />
-              <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-blue-100 dark:bg-blue-950/20 rounded-3xl -z-10 -rotate-12 blur-sm" />
+              <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-emerald-100 dark:bg-emerald-950/20 rounded-3xl -z-10 -rotate-12 blur-sm" />
 
               {/* Main Image Graphic Container */}
               <div className="w-full h-full glass rounded-[40px] p-4 shadow-2xl overflow-hidden relative group">
@@ -117,7 +117,7 @@ const HeroSection = () => {
                   transition={{ delay: 0.6 }}
                   className="absolute bottom-8 left-8 right-8 p-4 bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 dark:border-slate-800/40 flex items-center gap-4"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shrink-0">
                     <HiOutlineGlobe size={20} />
                   </div>
                   <div>

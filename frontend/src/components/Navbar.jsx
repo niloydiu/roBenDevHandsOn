@@ -45,7 +45,7 @@ const Navbar = () => {
           
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-slate-900 dark:bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-xl group-hover:bg-blue-600 dark:group-hover:bg-blue-500 transition-colors">
+            <div className="w-10 h-10 bg-emerald-600 dark:bg-emerald-500 rounded-xl flex items-center justify-center text-white font-black text-xl group-hover:bg-emerald-750 transition-colors">
               H
             </div>
             <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">HandsOn</span>
@@ -59,7 +59,7 @@ const Navbar = () => {
                 to={link.path}
                 className={({ isActive }) => `
                   px-5 py-2.5 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all
-                  ${isActive ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}
+                  ${isActive ? 'bg-emerald-600 dark:bg-emerald-500 text-white shadow-lg shadow-emerald-500/25' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}
                 `}
               >
                 {link.name}
@@ -82,7 +82,7 @@ const Navbar = () => {
                   to="/profile"
                   className="flex items-center gap-3 px-4 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-2xl transition-all border border-slate-100 dark:border-slate-700 group"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-slate-700 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xs uppercase overflow-hidden">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-slate-700 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase overflow-hidden">
                     {userData?.avatar ? <img src={userData.avatar} className="w-full h-full object-cover" /> : userData?.name?.charAt(0) || <HiOutlineUser />}
                   </div>
                   <span className="text-sm font-black text-slate-900 dark:text-slate-200 tracking-tight">{userData?.name?.split(' ')[0] || "Profile"}</span>
@@ -105,7 +105,7 @@ const Navbar = () => {
                 </Link>
                 <Link
                   to="/signup"
-                  className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-[13px] uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all"
+                  className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-[13px] uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:bg-emerald-700 hover:-translate-y-0.5 transition-all"
                 >
                   Join Now
                 </Link>
@@ -148,11 +148,11 @@ const Navbar = () => {
                     to={link.path}
                     className={({ isActive }) => `
                       px-6 py-4 rounded-[20px] text-sm font-black uppercase tracking-widest transition-all flex items-center justify-between
-                      ${isActive ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}
+                      ${isActive ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}
                     `}
                   >
                     {link.name}
-                    {link.path === location.pathname && <div className="w-1.5 h-1.5 rounded-full bg-blue-600 shadow-lg shadow-blue-400" />}
+                    {link.path === location.pathname && <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 shadow-lg shadow-emerald-400" />}
                   </NavLink>
                 ))}
               </div>
@@ -162,7 +162,7 @@ const Navbar = () => {
                   <div className="space-y-3">
                     <Link
                       to="/profile"
-                      className="flex items-center justify-between px-6 py-4 bg-slate-900 dark:bg-blue-600 text-white rounded-[24px] font-black text-sm uppercase tracking-widest"
+                      className="flex items-center justify-between px-6 py-4 bg-emerald-600 text-white rounded-[24px] font-black text-sm uppercase tracking-widest"
                     >
                       My Dashboard <HiOutlineUser size={18} />
                     </Link>
@@ -183,7 +183,7 @@ const Navbar = () => {
                     </Link>
                     <Link
                       to="/signup"
-                      className="px-6 py-4 text-center bg-blue-600 text-white font-black text-xs uppercase tracking-widest rounded-[20px]"
+                      className="px-6 py-4 text-center bg-emerald-600 text-white font-black text-xs uppercase tracking-widest rounded-[20px]"
                     >
                       Sign Up
                     </Link>

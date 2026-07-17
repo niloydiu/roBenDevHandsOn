@@ -61,16 +61,34 @@ const Support = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-800/40 rounded-3xl p-8 shadow-2xl relative overflow-hidden"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl" />
           
           <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center text-blue-600 dark:text-blue-400">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
               <FaHeart size={30} className="animate-pulse" />
             </div>
           </div>
 
           <h2 className="text-2xl font-black text-slate-800 dark:text-white text-center mb-2">Support Our Community</h2>
           <p className="text-slate-500 dark:text-slate-400 text-center text-sm mb-8">Donate to fund volunteer logistics or help requests. Earn 100 points as a community contributor badge!</p>
+
+          {/* Quick-toggle selector buttons */}
+          <div className="grid grid-cols-4 gap-2 mb-6">
+            {[10, 25, 50, 100].map((val) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => setAmount(String(val))}
+                className={`py-3 rounded-xl text-xs font-black transition-all cursor-pointer border ${
+                  amount === String(val)
+                    ? "bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-500/25"
+                    : "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700/50 text-slate-600 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-700"
+                }`}
+              >
+                ${val}
+              </button>
+            ))}
+          </div>
 
           <form onSubmit={handleDonate} className="space-y-6">
             <div>
@@ -82,7 +100,7 @@ const Support = () => {
                   placeholder="50"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full pl-8 pr-4 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 focus:border-blue-600 focus:bg-white dark:focus:bg-slate-900 text-slate-800 dark:text-white font-bold transition-all focus:outline-none"
+                  className="w-full pl-8 pr-4 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 focus:border-emerald-650 focus:bg-white dark:focus:bg-slate-900 text-slate-800 dark:text-white font-bold transition-all focus:outline-none"
                   disabled={loading}
                 />
               </div>
@@ -91,7 +109,7 @@ const Support = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-lg shadow-blue-500/20 dark:shadow-none active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all shadow-lg shadow-emerald-500/20 dark:shadow-none active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               <FaCreditCard size={16} />
               <span>{loading ? "Processing..." : "Pay with Stripe"}</span>
