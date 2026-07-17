@@ -22,6 +22,8 @@ const Teams = lazy(() => import("./pages/Teams"));
 const TeamDetail = lazy(() => import("./components/TeamDetail"));
 const TeamEdit = lazy(() => import("./components/TeamEdit"));
 const AdminPendingHours = lazy(() => import("./components/AdminPendingHours"));
+const Chat = lazy(() => import("./pages/Chat"));
+const Support = lazy(() => import("./pages/Support"));
 
 // Loading Fallback Component
 const PageLoading = () => (
@@ -55,6 +57,8 @@ const App = () => {
               <Route path="/edit-team/:id" element={<TeamEdit />} />
               <Route path="/create-team" element={<Teams />} />
               <Route path="/admin/pending-hours" element={<AdminPendingHours />} />
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/support" element={<Support />} />
             </Routes>
           </AnimatePresence>
         </Suspense>

@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Appcontext } from "../context/Appcontext";
 import { motion } from "framer-motion";
@@ -16,6 +16,38 @@ const SignUp = () => {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  const handleGoogleLogin = async (response) => {
+    setLoading(true);
+    try {
+      const res = await axios.post(`${backendUrl}/api/user/google`, {
+        token: response.credential
+      });
+      if (res.data.success) {
+        localStorage.setItem("token", res.data.token);
+        setToken(res.data.token);
+        toast.success("Welcome with Google!");
+        navigate("/");
+      }
+    } catch (err) {
+      toast.error("Google Sign-In failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (window.google) {
+      window.google.accounts.id.initialize({
+        client_id: "870634676451-dummyid.apps.googleusercontent.com",
+        callback: handleGoogleLogin,
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById("google-signup-btn"),
+        { theme: "outline", size: "large", width: "350" }
+      );
+    }
+  }, [backendUrl]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -115,6 +147,16 @@ const SignUp = () => {
               )}
             </button>
           </form>
+
+          <div className="relative flex py-5 items-center">
+            <div className="flex-grow border-t border-slate-100"></div>
+            <span className="flex-shrink mx-4 text-slate-400 text-xs font-black uppercase tracking-widest">Or</span>
+            <div className="flex-grow border-t border-slate-100"></div>
+          </div>
+
+          <div className="flex justify-center">
+            <div id="google-signup-btn" />
+          </div>
 
           <div className="mt-10 text-center">
             <p className="text-slate-500 font-medium mb-4">Already have an account?</p>

@@ -16,9 +16,11 @@ import {
 } from "react-icons/hi";
 import { toast } from "react-toastify";
 import PageWrapper from "../components/PageWrapper";
+import MapComponent from "../components/MapComponent";
 
 function CommunityHelp() {
   const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState("list");
   const {
     isLoggedIn,
     helpRequests,
@@ -189,15 +191,40 @@ function CommunityHelp() {
           >
             My Requests Only
           </button>
+
+          <div className="ml-auto flex bg-slate-100 p-1.5 rounded-2xl border border-slate-100">
+            <button 
+              onClick={() => setViewMode("list")} 
+              className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${viewMode === "list" ? "bg-white text-slate-800 shadow-md" : "text-slate-500 hover:text-slate-700"}`}
+            >
+              List
+            </button>
+            <button 
+              onClick={() => setViewMode("map")} 
+              className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${viewMode === "map" ? "bg-white text-slate-800 shadow-md" : "text-slate-500 hover:text-slate-700"}`}
+            >
+              Map
+            </button>
+          </div>
         </div>
 
-        {/* Requests Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
-          {loadingHelpRequests ? (
-            Array(6).fill(0).map((_, i) => (
-              <div key={i} className="bg-slate-200 animate-pulse h-64 rounded-[40px]" />
-            ))
-          ) : filteredRequests.length > 0 ? (
+        {/* Requests Grid or Map View */}
+        {viewMode === "map" ? (
+          <div className="mb-20 h-[500px]">
+            <MapComponent 
+              items={filteredRequests} 
+              onMarkerClick={(request) => {
+                toast.info(`Request selected: ${request.title}`);
+              }} 
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
+            {loadingHelpRequests ? (
+              Array(6).fill(0).map((_, i) => (
+                <div key={i} className="bg-slate-200 animate-pulse h-64 rounded-[40px]" />
+              ))
+            ) : filteredRequests.length > 0 ? (
             filteredRequests.map((request) => (
               <motion.div 
                 layout
@@ -248,17 +275,25 @@ function CommunityHelp() {
                         <HiOutlineTrash size={20} />
                       </button>
                     ) : (
-                      <button 
-                        onClick={() => handleOfferHelpClick(request._id)}
-                        disabled={processingRequest === request._id}
-                        className={`px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all ${
-                          hasUserOfferedHelp(request._id) 
-                            ? 'bg-emerald-600 text-white shadow-emerald-500/25' 
-                            : 'bg-slate-900 text-white hover:bg-blue-600 shadow-slate-500/25 shadow-lg'
-                        }`}
-                      >
-                        {hasUserOfferedHelp(request._id) ? "Help Offered" : "Offer Support"}
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => navigate(`/chat`)}
+                          className="px-4 py-3 bg-slate-100 text-slate-700 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-all cursor-pointer"
+                        >
+                          Chat
+                        </button>
+                        <button 
+                          onClick={() => handleOfferHelpClick(request._id)}
+                          disabled={processingRequest === request._id}
+                          className={`px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all cursor-pointer ${
+                            hasUserOfferedHelp(request._id) 
+                              ? 'bg-emerald-600 text-white shadow-emerald-500/25' 
+                              : 'bg-slate-900 text-white hover:bg-blue-600 shadow-slate-500/25 shadow-lg'
+                          }`}
+                        >
+                          {hasUserOfferedHelp(request._id) ? "Help Offered" : "Offer Support"}
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -273,7 +308,7 @@ function CommunityHelp() {
               <p className="text-slate-500 font-medium">No active help requests match your search criteria.</p>
             </div>
           )}
-        </div>
+        )}
       </div>
 
       {/* New Request Modal */}

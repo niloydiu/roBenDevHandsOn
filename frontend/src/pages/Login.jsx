@@ -17,6 +17,38 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleGoogleLogin = async (response) => {
+    setLoading(true);
+    try {
+      const res = await axios.post(`${backendUrl}/api/user/google`, {
+        token: response.credential
+      });
+      if (res.data.success) {
+        localStorage.setItem("token", res.data.token);
+        setToken(res.data.token);
+        toast.success("Welcome with Google!");
+        navigate("/");
+      }
+    } catch (err) {
+      toast.error("Google Sign-In failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (window.google) {
+      window.google.accounts.id.initialize({
+        client_id: "870634676451-dummyid.apps.googleusercontent.com", // client ID placeholder, will fallback to decode token
+        callback: handleGoogleLogin,
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById("google-signin-btn"),
+        { theme: "outline", size: "large", width: "350" }
+      );
+    }
+  }, [backendUrl]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -36,6 +68,13 @@ const Login = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Also trigger Google One Tap prompt
+    if (window.google) {
+      window.google.accounts.id.prompt();
+    }
+  }, []);
 
   return (
     <PageWrapper>
@@ -102,6 +141,16 @@ const Login = () => {
               )}
             </button>
           </form>
+
+          <div className="relative flex py-5 items-center">
+            <div className="flex-grow border-t border-slate-100"></div>
+            <span className="flex-shrink mx-4 text-slate-400 text-xs font-black uppercase tracking-widest">Or</span>
+            <div className="flex-grow border-t border-slate-100"></div>
+          </div>
+
+          <div className="flex justify-center">
+            <div id="google-signin-btn" />
+          </div>
 
           <div className="mt-12 text-center">
             <p className="text-slate-500 font-medium mb-4">Don't have an account yet?</p>

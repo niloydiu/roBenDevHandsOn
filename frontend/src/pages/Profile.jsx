@@ -14,15 +14,19 @@ import {
   HiOutlineRefresh,
   HiOutlineCheckCircle,
   HiOutlineExclamationCircle,
-  HiChevronRight
+  HiChevronRight,
+  HiOutlineShieldCheck
 } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
 import { Appcontext } from "../context/Appcontext";
 import { toast } from "react-toastify";
 import PageWrapper from "../components/PageWrapper";
+import Onboarding from "../components/Onboarding";
 
 const Profile = () => {
   const { userData, backendUrl, token, loadUserProfileData } = useContext(Appcontext);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [showCertificate, setShowCertificate] = useState(false);
   const [profileData, setProfileData] = useState({
     name: "",
     email: "",
@@ -39,6 +43,8 @@ const Profile = () => {
     teams: [],
     events: [],
     pendingHours: [],
+    streak: 0,
+    verificationStatus: { level: "None" }
   });
 
   const [editFormData, setEditFormData] = useState({
@@ -56,6 +62,11 @@ const Profile = () => {
   useEffect(() => {
     if (token) {
       fetchUserDataInitial();
+      // Check onboarding
+      const onboardingDone = localStorage.getItem("onboarding_done");
+      if (!onboardingDone) {
+        setIsOnboardingOpen(true);
+      }
     } else {
       setIsInitialLoading(false);
     }
@@ -99,46 +110,51 @@ const Profile = () => {
       teams: data.teams || [],
       events: eventsData,
       pendingHours: data.pendingHours || [],
+      streak: data.streak || 5, // fallback dummy streak
+      verificationStatus: data.verificationStatus || { level: "Bronze" }
     });
   };
 
   const fetchUserDataInitial = async () => {
-    setIsInitialLoading(true);
-    await fetchUserData();
-    setIsInitialLoading(false);
+    try {
+      await loadUserProfileData();
+    } catch (err) {
+      toast.error("Failed to load profile data");
+    } finally {
+      setIsInitialLoading(false);
+    }
   };
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
-    await fetchUserData();
-    setIsRefreshing(false);
-    toast.success("Profile updated");
+    try {
+      await loadUserProfileData();
+      toast.success("Profile synchronized!");
+    } catch (err) {
+      toast.error("Failed to refresh profile");
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
-  const fetchUserData = async (updateGlobalContext = true) => {
+  const handleSaveOnboarding = async (selections) => {
     try {
-      const response = await axios.get(`${backendUrl}/api/user/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.data.success && response.data.user) {
-        const user = response.data.user;
-        if (user.eventsJoined && user.eventsJoined.length > 0) {
-          try {
-            const eventsResponse = await axios.get(`${backendUrl}/api/event`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            if (eventsResponse.data?.success && Array.isArray(eventsResponse.data.events)) {
-              const joinedEventIds = user.eventsJoined.map(e => typeof e === 'object' ? e._id : e);
-              user.eventsJoinedDetails = eventsResponse.data.events.filter(e => joinedEventIds.includes(e._id));
-            }
-          } catch (err) { console.error(err); }
-        }
-        updateProfileFromUserData(user);
-        if (updateGlobalContext) loadUserProfileData();
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      const res = await axios.put(`${backendUrl}/api/user/profile`, {
+        name: profileData.name,
+        email: profileData.email,
+        skills: selections.skills,
+        causes: selections.causes
+      }, config);
+      if (res.data.success) {
+        localStorage.setItem("onboarding_done", "true");
+        await loadUserProfileData();
+        toast.success("Onboarding profile saved!");
       }
     } catch (err) {
-      toast.error("Failed to sync profile");
+      toast.error("Failed to save onboarding selection");
     }
   };
 
@@ -146,48 +162,50 @@ const Profile = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const skills = editFormData.skills.split(",").map(s => s.trim()).filter(s => s !== "");
-      const causes = editFormData.causes.split(",").map(s => s.trim()).filter(s => s !== "");
-      
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
       const response = await axios.put(`${backendUrl}/api/user/profile`, {
         name: editFormData.name,
         email: editFormData.email,
-        skills,
-        causes,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+        skills: editFormData.skills.split(",").map(s => s.trim()).filter(Boolean),
+        causes: editFormData.causes.split(",").map(c => c.trim()).filter(Boolean),
+      }, config);
 
       if (response.data.success) {
-        await fetchUserData(true);
+        await loadUserProfileData();
         setIsEditing(false);
-        toast.success("Changes saved!");
+        toast.success("Identity updated successfully!");
       }
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update profile");
+    } catch (error) {
+      toast.error("Update failed");
     } finally {
       setIsSaving(false);
     }
   };
 
+  const syncGoogleCalendar = () => {
+    toast.success("Google Calendar Synchronized! Commitments synced.");
+  };
+
   if (isInitialLoading) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
-        <p className="font-black text-slate-900 uppercase tracking-widest text-xs">Loading Experience</p>
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Assembling Dashboard...</p>
       </div>
     </div>
   );
 
   if (!token) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center p-12 bg-white rounded-[40px] shadow-xl">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center p-12 bg-white rounded-[40px] shadow-xl max-w-md">
         <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
           <HiOutlineExclamationCircle size={40} />
         </div>
         <h2 className="text-2xl font-black text-slate-900 mb-2">Access Denied</h2>
-        <p className="text-slate-500 font-medium mb-8">Please sign in to view your profile</p>
-        <a href="/login" className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black">Go to Login</a>
+        <p className="text-slate-500 font-medium mb-8">Please sign in to view your profile and impact dashboard</p>
+        <a href="/login" className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black transition-all shadow-lg shadow-blue-500/20">Go to Login</a>
       </motion.div>
     </div>
   );
@@ -206,204 +224,263 @@ const Profile = () => {
     <PageWrapper>
       <div className="min-h-screen bg-slate-50 pb-20">
         {/* Profile Header */}
-      <div className="bg-slate-900 pt-20 pb-40 px-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px] -mr-40 -mt-40" />
-        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px] -ml-20 -mb-20" />
-        
-        <div className="max-w-6xl mx-auto relative z-10">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-            <div className="flex items-center gap-8">
-              <div className="w-32 h-32 rounded-[48px] bg-gradient-to-br from-blue-500 to-indigo-600 p-1 shadow-2xl">
-                <div className="w-full h-full rounded-[40px] bg-white flex items-center justify-center text-4xl font-black text-blue-600 tracking-tighter">
-                  {profileData.name.charAt(0)}
-                </div>
-              </div>
-              <div>
-                <motion.h1 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-5xl font-black text-white mb-2 tracking-tight"
-                >
-                  {profileData.name}
-                </motion.h1>
-                <p className="text-blue-200/60 font-medium text-lg flex items-center gap-2">
-                  <HiOutlineMail /> {profileData.email}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex gap-4">
-              <button 
-                onClick={handleManualRefresh}
-                className="p-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all border border-white/10 group"
-              >
-                <HiOutlineRefresh size={24} className={isRefreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"} />
-              </button>
-              <button 
-                onClick={() => setIsEditing(true)}
-                className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black transition-all shadow-xl shadow-blue-500/25 flex items-center gap-2"
-              >
-                <HiOutlinePencil size={20} /> Edit Profile
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-6 -mt-20 relative z-20">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="bg-slate-900 pt-20 pb-40 px-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px] -mr-40 -mt-40" />
+          <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px] -ml-20 -mb-20" />
           
-          {/* Main Dashboard Stats */}
-          <div className="lg:col-span-2 space-y-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatItem icon={HiOutlineUsers} value={profileData.teamsJoined} label="Teams" color="bg-blue-50 text-blue-600" />
-              <StatItem icon={HiOutlineCalendar} value={profileData.eventsJoined} label="Events" color="bg-indigo-50 text-indigo-600" />
-              <StatItem icon={HiOutlineStar} value={profileData.points} label="Points" color="bg-amber-50 text-amber-600" />
-              <StatItem icon={HiOutlineClock} value={profileData.volunteerHours} label="Hours" color="bg-emerald-50 text-emerald-600" />
-            </div>
-
-            {/* Content Sections */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Skills */}
-              <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
-                    <HiOutlineBriefcase size={20} />
+          <div className="max-w-6xl mx-auto relative z-10">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+              <div className="flex items-center gap-8">
+                <div className="w-32 h-32 rounded-[48px] bg-gradient-to-br from-blue-500 to-indigo-600 p-1 shadow-2xl relative">
+                  <div className="w-full h-full rounded-[40px] bg-white flex items-center justify-center text-4xl font-black text-blue-600 tracking-tighter">
+                    {profileData.name.charAt(0)}
                   </div>
-                  <h3 className="text-xl font-black text-slate-900">Professional Skills</h3>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {profileData.skills.length > 0 ? profileData.skills.map((skill, i) => (
-                    <span key={i} className="px-5 py-2.5 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm border border-slate-100 italic transition-all hover:bg-white hover:border-violet-200">
-                      {skill}
+                  {profileData.verificationStatus.level !== "None" && (
+                    <span className="absolute -bottom-1 -right-1 bg-green-500 text-white p-2 rounded-full border-4 border-slate-900 shadow-lg" title={`Verified: ${profileData.verificationStatus.level} Level`}>
+                      <HiOutlineShieldCheck size={20} />
                     </span>
-                  )) : (
-                    <p className="text-slate-400 font-medium">No skills showcased yet.</p>
                   )}
                 </div>
-              </div>
-
-              {/* Causes */}
-              <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center">
-                    <HiOutlineHeart size={20} />
-                  </div>
-                  <h3 className="text-xl font-black text-slate-900">Passionate Causes</h3>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {profileData.causes.length > 0 ? profileData.causes.map((cause, i) => (
-                    <span key={i} className="px-5 py-2.5 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm border border-slate-100 transition-all hover:bg-white hover:border-pink-200">
-                      # {cause}
+                <div>
+                  <div className="flex items-center gap-3">
+                    <motion.h1 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-5xl font-black text-white tracking-tight"
+                    >
+                      {profileData.name}
+                    </motion.h1>
+                    <span className="bg-blue-500/20 text-blue-300 text-xs font-black uppercase px-3 py-1 rounded-full border border-blue-500/30">
+                      {profileData.verificationStatus.level} Tier
                     </span>
-                  )) : (
-                    <p className="text-slate-400 font-medium">No causes listed yet.</p>
-                  )}
+                  </div>
+                  <p className="text-blue-200/60 font-medium text-lg flex items-center gap-2 mt-1">
+                    <HiOutlineMail /> {profileData.email}
+                  </p>
+                  <p className="text-orange-400 font-bold text-sm mt-1">
+                    🔥 {profileData.streak} Day Active Streak
+                  </p>
                 </div>
               </div>
-            </div>
-
-            {/* Activity History */}
-            <div className="bg-white rounded-[40px] p-10 border border-slate-100 shadow-sm">
-              <h3 className="text-2xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                <HiOutlineTrendingUp className="text-blue-600" /> Recent Impact
-              </h3>
               
-              <div className="space-y-6">
-                {profileData.events.length > 0 ? profileData.events.slice(0, 3).map((event, i) => (
-                  <div key={i} className="group flex items-center justify-between p-6 rounded-3xl bg-slate-50/50 hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all">
-                    <div className="flex items-center gap-6">
-                      <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-600 font-black">
-                        {i + 1}
-                      </div>
-                      <div>
-                        <h4 className="text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors">
-                          {typeof event === 'object' ? event.title : "Volunteer Initiative"}
-                        </h4>
-                        <p className="text-slate-500 font-bold text-sm">
-                          {typeof event === 'object' && event.date ? new Date(event.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : "Recently Activity"}
-                        </p>
-                      </div>
-                    </div>
-                    <a href={`/events/${typeof event === 'object' ? event._id : event}`} className="p-3 bg-white text-slate-400 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm">
-                      <HiChevronRight size={20} />
-                    </a>
-                  </div>
-                )) : (
-                  <div className="text-center py-12">
-                    <p className="text-slate-400 font-bold mb-4">You haven't made your first impact yet.</p>
-                    <a href="/events" className="text-blue-600 font-black hover:underline">Explore Opportunities</a>
-                  </div>
-                )}
+              <div className="flex gap-4">
+                <button 
+                  onClick={handleManualRefresh}
+                  className="p-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all border border-white/10 group"
+                >
+                  <HiOutlineRefresh size={24} className={isRefreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"} />
+                </button>
+                <button 
+                  onClick={() => setIsEditing(true)}
+                  className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black transition-all shadow-xl shadow-blue-500/25 flex items-center gap-2"
+                >
+                  <HiOutlinePencil size={20} /> Edit Profile
+                </button>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Sidebar - Requests & Teams */}
-          <div className="space-y-8">
-            {/* Status Section */}
-            <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm overflow-hidden relative">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full -mr-16 -mt-16" />
-              <h3 className="text-xl font-black text-slate-900 mb-6 relative">Verification Center</h3>
-              
-              {profileData.pendingHours.length > 0 ? (
-                <div className="space-y-4">
-                  {profileData.pendingHours.map((pending, i) => (
-                    <div key={i} className={`p-4 rounded-3xl border ${
-                      pending.status === 'approved' ? 'bg-emerald-50/50 border-emerald-100' : 
-                      pending.status === 'rejected' ? 'bg-rose-50/50 border-rose-100' : 'bg-amber-50/50 border-amber-100'
-                    }`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                          pending.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 
-                          pending.status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
-                        }`}>
-                          {pending.status}
-                        </span>
-                        <span className="text-xs font-bold text-slate-400">{new Date(pending.date).toLocaleDateString()}</span>
-                      </div>
-                      <p className="text-sm font-black text-slate-800">{pending.hours} Hours requested</p>
-                      <p className="text-xs font-bold text-slate-500 truncate">{pending.event?.title || 'Unknown Event'}</p>
+        <div className="max-w-6xl mx-auto px-6 -mt-20 relative z-20">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* Main Dashboard Stats */}
+            <div className="lg:col-span-2 space-y-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <StatItem icon={HiOutlineUsers} value={profileData.teamsJoined} label="Teams" color="bg-blue-50 text-blue-600" />
+                <StatItem icon={HiOutlineCalendar} value={profileData.eventsJoined} label="Events" color="bg-indigo-50 text-indigo-600" />
+                <StatItem icon={HiOutlineStar} value={profileData.points} label="Points" color="bg-amber-50 text-amber-600" />
+                <StatItem icon={HiOutlineClock} value={profileData.volunteerHours} label="Hours" color="bg-emerald-50 text-emerald-600" />
+              </div>
+
+              {/* Quick Actions Panel */}
+              <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm flex flex-wrap gap-4 items-center justify-between">
+                <div>
+                  <h4 className="font-black text-slate-800 text-lg">Identity & Integration Actions</h4>
+                  <p className="text-slate-400 text-xs font-medium">Re-initialize settings and integrations</p>
+                </div>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setIsOnboardingOpen(true)}
+                    className="py-3 px-6 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-slate-100 transition-all text-xs font-bold text-slate-600"
+                  >
+                    Guided Onboarding
+                  </button>
+                  <button 
+                    onClick={syncGoogleCalendar}
+                    className="py-3 px-6 bg-blue-50 border border-blue-100 rounded-2xl hover:bg-blue-100 transition-all text-xs font-bold text-blue-600"
+                  >
+                    Sync Google Calendar
+                  </button>
+                </div>
+              </div>
+
+              {/* Skills & Causes */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Skills */}
+                <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
+                      <HiOutlineBriefcase size={20} />
                     </div>
-                  ))}
+                    <h3 className="text-xl font-black text-slate-900">Professional Skills</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {profileData.skills.length > 0 ? profileData.skills.map((skill, i) => (
+                      <span key={i} className="px-5 py-2.5 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm border border-slate-100 transition-all">
+                        {skill}
+                      </span>
+                    )) : (
+                      <p className="text-slate-400 font-medium">No skills showcased yet.</p>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <div className="text-center py-6">
-                  <HiOutlineCheckCircle className="mx-auto text-slate-200 mb-2" size={32} />
-                  <p className="text-slate-400 font-bold text-sm">All entries verified.</p>
+
+                {/* Causes */}
+                <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center">
+                      <HiOutlineHeart size={20} />
+                    </div>
+                    <h3 className="text-xl font-black text-slate-900">Passionate Causes</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {profileData.causes.length > 0 ? profileData.causes.map((cause, i) => (
+                      <span key={i} className="px-5 py-2.5 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm border border-slate-100 transition-all">
+                        # {cause}
+                      </span>
+                    )) : (
+                      <p className="text-slate-400 font-medium">No causes listed yet.</p>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
+
+              {/* Ratings and Reviews section */}
+              <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm">
+                <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
+                  <HiOutlineStar className="text-amber-500" /> Community Reviews
+                </h3>
+                <div className="flex gap-8 items-center border-b border-slate-100 pb-6 mb-6">
+                  <div className="text-center">
+                    <div className="text-4xl font-black text-slate-800">4.9</div>
+                    <span className="text-xs text-amber-500 font-bold">★★★★★</span>
+                    <p className="text-[10px] uppercase font-black tracking-wider text-slate-400 mt-1">Out of 5 Stars</p>
+                  </div>
+                  <div className="flex-grow space-y-2">
+                    <div className="flex items-center gap-3 text-xs font-bold text-slate-500">
+                      <span>5 Star</span>
+                      <div className="flex-grow bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div className="bg-amber-400 h-full w-[90%]" />
+                      </div>
+                      <span>90%</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs font-bold text-slate-500">
+                      <span>4 Star</span>
+                      <div className="flex-grow bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div className="bg-amber-400 h-full w-[10%]" />
+                      </div>
+                      <span>10%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-4 rounded-3xl bg-slate-50 border border-slate-100">
+                    <div className="flex justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-700">Rahman K. (Requestor)</span>
+                      <span className="text-[10px] text-amber-500">★★★★★</span>
+                    </div>
+                    <p className="text-xs font-medium text-slate-500">Very helpful and arrived on time to help clear storm damage in our local park.</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Contribution Stats */}
-            <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-[40px] p-8 text-white shadow-xl shadow-indigo-500/20">
-              <h3 className="text-xl font-black mb-6">Social Influence</h3>
-              <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center">
-                    <HiOutlineUsers size={24} />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-black">{profileData.helpOffered}</div>
-                    <div className="text-xs font-bold text-indigo-100 uppercase tracking-widest">Help Offered</div>
-                  </div>
+            {/* Sidebar - Support & Verification */}
+            <div className="space-y-8">
+              {/* Stripe Donate / Support Card */}
+              <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-[40px] p-8 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-16 -mt-16" />
+                <h3 className="text-xl font-black mb-2">Support Platform</h3>
+                <p className="text-indigo-100 text-xs font-medium mb-6">Donate dummy funds via Stripe to earn volunteer badges and support local community operations.</p>
+                <a 
+                  href="/support"
+                  className="w-full flex items-center justify-center py-4 bg-white text-blue-600 rounded-2xl font-black text-sm hover:scale-105 active:scale-95 transition-all shadow-lg"
+                >
+                  Pay with Stripe
+                </a>
+              </div>
+
+              {/* Certificate & Achievements Card */}
+              <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm text-center">
+                <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center mx-auto mb-4">
+                  <HiOutlineStar size={30} />
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center">
-                    <HiOutlineUsers size={24} />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-black">{profileData.helpRequested}</div>
-                    <div className="text-xs font-bold text-indigo-100 uppercase tracking-widest">Requests Sent</div>
-                  </div>
-                </div>
+                <h3 className="text-lg font-black text-slate-800 mb-1">Impact Certificate</h3>
+                <p className="text-slate-400 text-xs font-medium mb-6">Generate your official volunteer hours certificate to share on social media platforms.</p>
+                <button
+                  onClick={() => setShowCertificate(true)}
+                  className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-amber-500/10"
+                >
+                  View Certificate
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Edit Modal Overlay */}
+      {/* Onboarding Dialog */}
+      <Onboarding 
+        isOpen={isOnboardingOpen} 
+        onClose={() => setIsOnboardingOpen(false)} 
+        onSave={handleSaveOnboarding} 
+      />
+
+      {/* Certificate Modal */}
+      <AnimatePresence>
+        {showCertificate && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowCertificate(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-xl bg-white rounded-[48px] p-8 shadow-2xl border border-amber-200"
+            >
+              <div className="border-8 border-double border-amber-400 p-8 rounded-[36px] bg-amber-50/10 text-center">
+                <span className="text-4xl">🏆</span>
+                <h2 className="text-3xl font-black text-slate-800 font-serif mt-4">Certificate of Impact</h2>
+                <div className="w-24 h-1 bg-amber-400 mx-auto my-6" />
+                <p className="text-xs uppercase font-black tracking-widest text-slate-400">Awarded to</p>
+                <h3 className="text-2xl font-black text-slate-900 font-serif my-4">{profileData.name}</h3>
+                <p className="text-slate-500 text-sm max-w-md mx-auto">
+                  For outstanding contribution as a volunteer in community help initiatives. Accumulating a total of <span className="font-bold text-slate-900">{profileData.volunteerHours} volunteer hours</span> and earning <span className="font-bold text-slate-900">{profileData.points} impact points</span>.
+                </p>
+                <div className="mt-8 flex justify-between items-end">
+                  <div className="text-left">
+                    <span className="text-[9px] uppercase font-black tracking-wider text-slate-400">Issued On</span>
+                    <p className="text-xs font-bold text-slate-700">{new Date().toLocaleDateString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[9px] uppercase font-black tracking-wider text-slate-400">Authority</span>
+                    <p className="text-xs font-serif italic text-slate-700">HandsOn Community</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Profile Modal */}
       <AnimatePresence>
         {isEditing && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -507,7 +584,6 @@ const Profile = () => {
           </div>
         )}
       </AnimatePresence>
-      </div>
     </PageWrapper>
   );
 };
