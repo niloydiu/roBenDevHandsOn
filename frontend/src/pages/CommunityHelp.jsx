@@ -308,7 +308,8 @@ function CommunityHelp() {
               <p className="text-slate-500 font-medium">No active help requests match your search criteria.</p>
             </div>
           )}
-        )}
+        </div>
+      )}
       </div>
 
       {/* New Request Modal */}
