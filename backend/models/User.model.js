@@ -16,8 +16,27 @@ const userSchema = new Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: false,
     },
+    googleId: {
+      type: String,
+      sparse: true,
+      unique: true,
+    },
+    verificationStatus: {
+      phoneVerified: { type: Boolean, default: false },
+      emailVerified: { type: Boolean, default: false },
+      idVerified: { type: Boolean, default: false },
+      level: { type: String, enum: ["None", "Bronze", "Silver", "Gold"], default: "None" }
+    },
+    ratings: {
+      avgRating: { type: Number, default: 0 },
+      reviewCount: { type: Number, default: 0 }
+    },
+    reportedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    blockedUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    streak: { type: Number, default: 0 },
+    lastActiveDate: { type: Date, default: Date.now },
     skills: [{ type: String }],
     causes: [{ type: String }],
     volunteerHours: {

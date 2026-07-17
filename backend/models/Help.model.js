@@ -20,6 +20,19 @@ const helpSchema = new mongoose.Schema(
       default: "medium",
       required: true,
     },
+    status: {
+      type: String,
+      enum: ["open", "accepted", "in-progress", "done", "cancelled"],
+      default: "open",
+    },
+    latitude: {
+      type: Number,
+      default: 23.8103, // default to Dhaka latitude
+    },
+    longitude: {
+      type: Number,
+      default: 90.4125, // default to Dhaka longitude
+    },
     category: {
       type: String,
       enum: [

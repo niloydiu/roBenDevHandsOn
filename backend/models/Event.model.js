@@ -15,6 +15,32 @@ const eventSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    urgency: {
+      type: String,
+      enum: ["Low", "Medium", "High", "Emergency"],
+      default: "Medium",
+    },
+    status: {
+      type: String,
+      enum: ["open", "accepted", "in-progress", "done", "cancelled"],
+      default: "open",
+    },
+    latitude: {
+      type: Number,
+      default: 23.8103, // default to Dhaka latitude
+    },
+    longitude: {
+      type: Number,
+      default: 90.4125, // default to Dhaka longitude
+    },
+    timeCommitment: {
+      type: String,
+      default: "2 hours",
+    },
+    recurring: {
+      type: Boolean,
+      default: false,
+    },
     date: {
       type: Date,
       required: true,

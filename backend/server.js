@@ -6,6 +6,8 @@ import eventRouter from "./Routes/Event.routes.js";
 import helpRouter from "./Routes/Help.routes.js";
 import teamRouter from "./Routes/Team.routes.js";
 import userRouter from "./Routes/User.routes.js";
+import chatRouter from "./Routes/Chat.routes.js";
+import paymentRouter from "./Routes/Payment.routes.js";
 
 const app = express();
 const port = process.env.PORT || 8001;
@@ -37,6 +39,8 @@ app.use("/api/user", userRouter);
 app.use("/api/event", eventRouter);
 app.use("/api/help", helpRouter);
 app.use("/api/team", teamRouter);
+app.use("/api/chat", chatRouter);
+app.use("/api/payment", paymentRouter);
 
 // Start server if not running under Vercel serverless environment
 if (process.env.VERCEL !== "1" && process.env.VERCEL_ENV !== "production") {

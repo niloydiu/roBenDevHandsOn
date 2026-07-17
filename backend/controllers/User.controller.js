@@ -315,6 +315,44 @@ const rejectHours = async (req, res) => {
   }
 };
 
+const googleLogin = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ success: false, message: "Google token is required" });
+    }
+
+    const decoded = jwt.decode(token);
+    if (!decoded || !decoded.email) {
+      return res.status(400).json({ success: false, message: "Invalid Google token payload" });
+    }
+
+    const { email, name, sub: googleId } = decoded;
+
+    let user = await User.findOne({ $or: [{ googleId }, { email }] });
+    if (!user) {
+      user = new User({
+        name,
+        email,
+        googleId,
+        verificationStatus: {
+          emailVerified: true,
+          level: "Bronze"
+        }
+      });
+      await user.save();
+    } else if (!user.googleId) {
+      user.googleId = googleId;
+      await user.save();
+    }
+
+    const backendToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    return res.status(200).json({ success: true, token: backendToken, user });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // export all the functions
 export {
   approveHours,
@@ -324,4 +362,5 @@ export {
   rejectHours,
   updateUser,
   userProfile,
+  googleLogin,
 };
