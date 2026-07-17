@@ -5,28 +5,30 @@ import mongoose from "mongoose";
 config();
 
 // function to connect to DB
+let cachedConnection = null;
+
 const connectDB = async () => {
-  // get the URI for mongoDB from env file
+  if (cachedConnection) {
+    return cachedConnection;
+  }
+
   const db = process.env.MONGO_URI;
 
-  // checking if MONGO_URI exists
   if (!db) {
-    console.log("No MongoDB URI found!!!");
+    console.error("No MongoDB URI found!!!");
     throw new Error("MONGO_URI is not defined in environment variables");
   }
 
   try {
-    // connecting to mongodb using mongoose
-    const conn = await mongoose.connect(db);
-
-    // if success then print this
+    // Use buffered commands false to avoid hanging queries if connection fails
+    cachedConnection = await mongoose.connect(db, {
+      bufferCommands: false,
+    });
     console.log("Connected to MongoDB successfully!");
-    return mongoose.connection;
+    return cachedConnection;
   } catch (error) {
-    // if error then print this
     console.error("Error connecting to MongoDB:", error.message);
-    console.log("Check your internet connection or MongoDB URI");
-    process.exit(1); // exit with error code
+    throw error;
   }
 };
 

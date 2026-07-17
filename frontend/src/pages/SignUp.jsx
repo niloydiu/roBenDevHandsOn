@@ -5,6 +5,7 @@ import { Appcontext } from "../context/Appcontext";
 import { motion } from "framer-motion";
 import { HiOutlineUser, HiOutlineMail, HiOutlineLockClosed, HiOutlineArrowRight } from "react-icons/hi";
 import { toast } from "react-toastify";
+import PageWrapper from "../components/PageWrapper";
 
 const SignUp = () => {
   const { backendUrl, setToken } = useContext(Appcontext);
@@ -37,8 +38,9 @@ const SignUp = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4 bg-slate-50">
-       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+    <PageWrapper>
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4 bg-slate-50">
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 -right-24 w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-50" />
         <div className="absolute bottom-1/4 -left-24 w-96 h-96 bg-indigo-100 rounded-full blur-3xl opacity-50" />
       </div>
@@ -125,7 +127,8 @@ const SignUp = () => {
           </div>
         </div>
       </motion.div>
-    </div>
+      </div>
+    </PageWrapper>
   );
 };
 

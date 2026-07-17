@@ -12,6 +12,7 @@ import {
   HiOutlineSparkles
 } from "react-icons/hi";
 import { toast } from "react-toastify";
+import PageWrapper from "../components/PageWrapper";
 
 function CreateEvent() {
   const navigate = useNavigate();
@@ -93,8 +94,9 @@ function CreateEvent() {
   const categories = ["Environmental", "Education", "Hunger Relief", "Community Support", "Healthcare", "Animal Welfare", "Crisis Response", "Arts & Culture", "Other"];
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-20">
-      <div className="bg-white border-b border-slate-100 pt-10 pb-12 mb-12">
+    <PageWrapper>
+      <div className="min-h-screen bg-slate-50/50 pb-20">
+        <div className="bg-white border-b border-slate-100 pt-10 pb-12 mb-12">
         <div className="container mx-auto px-4 lg:px-20">
           <button 
             onClick={() => navigate(-1)}
@@ -289,7 +291,8 @@ function CreateEvent() {
           </div>
         </form>
       </div>
-    </div>
+      </div>
+    </PageWrapper>
   );
 }
 

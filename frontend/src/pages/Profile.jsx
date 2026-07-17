@@ -19,6 +19,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Appcontext } from "../context/Appcontext";
 import { toast } from "react-toastify";
+import PageWrapper from "../components/PageWrapper";
 
 const Profile = () => {
   const { userData, backendUrl, token, loadUserProfileData } = useContext(Appcontext);
@@ -202,8 +203,9 @@ const Profile = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
-      {/* Profile Header */}
+    <PageWrapper>
+      <div className="min-h-screen bg-slate-50 pb-20">
+        {/* Profile Header */}
       <div className="bg-slate-900 pt-20 pb-40 px-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px] -mr-40 -mt-40" />
         <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px] -ml-20 -mb-20" />
@@ -505,7 +507,8 @@ const Profile = () => {
           </div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </PageWrapper>
   );
 };
 

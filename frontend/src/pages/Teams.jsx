@@ -8,6 +8,7 @@ import { Appcontext } from "../context/Appcontext";
 import { motion, AnimatePresence } from "framer-motion";
 import { HiOutlineUserGroup, HiOutlineGlobeAlt, HiOutlineChartBar, HiOutlinePlus, HiOutlineEmojiHappy } from "react-icons/hi";
 import { toast } from "react-toastify";
+import PageWrapper from "../components/PageWrapper";
 
 function Teams() {
   const { backendUrl, token, isLoggedIn } = useContext(Appcontext);
@@ -94,8 +95,9 @@ function Teams() {
   ];
 
   return (
-    <div className="min-h-screen pb-20">
-      {/* Header */}
+    <PageWrapper>
+      <div className="min-h-screen pb-20">
+        {/* Header */}
       <div className="bg-white border-b border-slate-100 pt-12 pb-8 sticky top-16 z-30">
         <div className="container mx-auto px-4 lg:px-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
@@ -233,7 +235,8 @@ function Teams() {
         handleCreateTeam={handleCreateTeam}
         resetNewTeam={resetNewTeam}
       />
-    </div>
+      </div>
+    </PageWrapper>
   );
 }
 

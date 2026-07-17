@@ -5,10 +5,12 @@ import CommunityRequests from "../components/home/CommunityRequests";
 import FeaturedEvents from "../components/home/FeaturedEvents";
 import HeroSection from "../components/home/HeroSection";
 import { HiOutlineArrowRight, HiOutlineUserGroup, HiOutlineCalendar, HiOutlineHeart } from "react-icons/hi2";
+import PageWrapper from "../components/PageWrapper";
 
 const Home = () => {
   return (
-    <div className="space-y-0">
+    <PageWrapper>
+      <div className="space-y-0">
       <HeroSection />
 
       {/* Stats / Proof Section */}
@@ -140,7 +142,8 @@ const Home = () => {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </PageWrapper>
   );
 };
 

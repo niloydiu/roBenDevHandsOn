@@ -1,7 +1,8 @@
 import React, { Suspense, lazy } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { AnimatePresence } from "framer-motion";
 
 // Layout Components
 import Navbar from "./components/Navbar";
@@ -31,27 +32,31 @@ const PageLoading = () => (
 );
 
 const App = () => {
+  const location = useLocation();
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50/50 text-slate-900 font-sans antialiased">
       <Navbar />
       <div className="flex-grow pt-24 lg:pt-32">
         <Suspense fallback={<PageLoading />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/events/:id" element={<EventDetail />} />
-            <Route path="/edit-event/:id" element={<EditEvent />} />
-            <Route path="/create-event" element={<CreateEvent />} />
-            <Route path="/community-help" element={<CommunityHelp />} />
-            <Route path="/teams" element={<Teams />} />
-            <Route path="/teams/:id" element={<TeamDetail />} />
-            <Route path="/edit-team/:id" element={<TeamEdit />} />
-            <Route path="/create-team" element={<Teams />} />
-            <Route path="/admin/pending-hours" element={<AdminPendingHours />} />
-          </Routes>
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/events" element={<Events />} />
+              <Route path="/events/:id" element={<EventDetail />} />
+              <Route path="/edit-event/:id" element={<EditEvent />} />
+              <Route path="/create-event" element={<CreateEvent />} />
+              <Route path="/community-help" element={<CommunityHelp />} />
+              <Route path="/teams" element={<Teams />} />
+              <Route path="/teams/:id" element={<TeamDetail />} />
+              <Route path="/edit-team/:id" element={<TeamEdit />} />
+              <Route path="/create-team" element={<Teams />} />
+              <Route path="/admin/pending-hours" element={<AdminPendingHours />} />
+            </Routes>
+          </AnimatePresence>
         </Suspense>
       </div>
       <Footer />

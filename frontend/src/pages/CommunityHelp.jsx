@@ -15,6 +15,7 @@ import {
   HiX
 } from "react-icons/hi";
 import { toast } from "react-toastify";
+import PageWrapper from "../components/PageWrapper";
 
 function CommunityHelp() {
   const navigate = useNavigate();
@@ -128,9 +129,10 @@ function CommunityHelp() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header Section */}
-      <div className="bg-slate-900 pt-20 pb-32 px-6 relative overflow-hidden">
+    <PageWrapper>
+      <div className="min-h-screen bg-slate-50/50 pb-20">
+        {/* Header Section */}
+        <div className="bg-slate-900 pt-20 pb-32 px-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[80px] -mr-20 -mt-20" />
         <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
           <div>
@@ -396,7 +398,8 @@ function CommunityHelp() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </PageWrapper>
   );
 }
 
