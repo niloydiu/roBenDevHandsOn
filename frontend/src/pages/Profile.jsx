@@ -189,42 +189,42 @@ const Profile = () => {
   };
 
   if (isInitialLoading) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
       <div className="text-center">
         <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Assembling Dashboard...</p>
+        <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-xs">Assembling Dashboard...</p>
       </div>
     </div>
   );
 
   if (!token) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center p-12 bg-white rounded-[40px] shadow-xl max-w-md">
-        <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center p-12 bg-white dark:bg-slate-900 rounded-[40px] shadow-xl max-w-md border border-slate-100 dark:border-slate-800/40">
+        <div className="w-20 h-20 bg-red-50 dark:bg-red-950/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
           <HiOutlineExclamationCircle size={40} />
         </div>
-        <h2 className="text-2xl font-black text-slate-900 mb-2">Access Denied</h2>
-        <p className="text-slate-500 font-medium mb-8">Please sign in to view your profile and impact dashboard</p>
+        <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Access Denied</h2>
+        <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">Please sign in to view your profile and impact dashboard</p>
         <a href="/login" className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black transition-all shadow-lg shadow-blue-500/20">Go to Login</a>
       </motion.div>
     </div>
   );
 
   const StatItem = ({ icon: Icon, value, label, color }) => (
-    <div className={`p-6 rounded-[32px] bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all`}>
+    <div className={`p-6 rounded-[32px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/40 shadow-sm hover:shadow-md transition-all`}>
       <div className={`w-12 h-12 rounded-2xl ${color} flex items-center justify-center mb-4`}>
         <Icon size={24} />
       </div>
-      <div className="text-3xl font-black text-slate-900 mb-1">{value}</div>
-      <div className="text-sm font-bold text-slate-400 uppercase tracking-wider">{label}</div>
+      <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{value}</div>
+      <div className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{label}</div>
     </div>
   );
 
   return (
     <PageWrapper>
-      <div className="min-h-screen bg-slate-50 pb-20">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950/20 pb-20">
         {/* Profile Header */}
-        <div className="bg-slate-900 pt-20 pb-40 px-6 relative overflow-hidden">
+        <div className="bg-slate-900 dark:bg-slate-950 pt-20 pb-40 px-6 relative overflow-hidden border-b border-transparent dark:border-slate-900">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px] -mr-40 -mt-40" />
           <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px] -ml-20 -mb-20" />
           
@@ -232,7 +232,7 @@ const Profile = () => {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div className="flex items-center gap-8">
                 <div className="w-32 h-32 rounded-[48px] bg-gradient-to-br from-blue-500 to-indigo-600 p-1 shadow-2xl relative">
-                  <div className="w-full h-full rounded-[40px] bg-white flex items-center justify-center text-4xl font-black text-blue-600 tracking-tighter">
+                  <div className="w-full h-full rounded-[40px] bg-white dark:bg-slate-900 flex items-center justify-center text-4xl font-black text-blue-600 dark:text-blue-400 tracking-tighter">
                     {profileData.name.charAt(0)}
                   </div>
                   {profileData.verificationStatus.level !== "None" && (
@@ -287,28 +287,28 @@ const Profile = () => {
             {/* Main Dashboard Stats */}
             <div className="lg:col-span-2 space-y-8">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatItem icon={HiOutlineUsers} value={profileData.teamsJoined} label="Teams" color="bg-blue-50 text-blue-600" />
-                <StatItem icon={HiOutlineCalendar} value={profileData.eventsJoined} label="Events" color="bg-indigo-50 text-indigo-600" />
-                <StatItem icon={HiOutlineStar} value={profileData.points} label="Points" color="bg-amber-50 text-amber-600" />
-                <StatItem icon={HiOutlineClock} value={profileData.volunteerHours} label="Hours" color="bg-emerald-50 text-emerald-600" />
+                <StatItem icon={HiOutlineUsers} value={profileData.teamsJoined} label="Teams" color="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400" />
+                <StatItem icon={HiOutlineCalendar} value={profileData.eventsJoined} label="Events" color="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" />
+                <StatItem icon={HiOutlineStar} value={profileData.points} label="Points" color="bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" />
+                <StatItem icon={HiOutlineClock} value={profileData.volunteerHours} label="Hours" color="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" />
               </div>
 
               {/* Quick Actions Panel */}
-              <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm flex flex-wrap gap-4 items-center justify-between">
+              <div className="bg-white dark:bg-slate-900 rounded-[40px] p-8 border border-slate-100 dark:border-slate-800/40 shadow-sm flex flex-wrap gap-4 items-center justify-between">
                 <div>
-                  <h4 className="font-black text-slate-800 text-lg">Identity & Integration Actions</h4>
-                  <p className="text-slate-400 text-xs font-medium">Re-initialize settings and integrations</p>
+                  <h4 className="font-black text-slate-800 dark:text-white text-lg">Identity & Integration Actions</h4>
+                  <p className="text-slate-400 dark:text-slate-500 text-xs font-medium">Re-initialize settings and integrations</p>
                 </div>
                 <div className="flex gap-3">
                   <button 
                     onClick={() => setIsOnboardingOpen(true)}
-                    className="py-3 px-6 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-slate-100 transition-all text-xs font-bold text-slate-600"
+                    className="py-3 px-6 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-750 transition-all text-xs font-bold text-slate-600 dark:text-slate-200 cursor-pointer"
                   >
                     Guided Onboarding
                   </button>
                   <button 
                     onClick={syncGoogleCalendar}
-                    className="py-3 px-6 bg-blue-50 border border-blue-100 rounded-2xl hover:bg-blue-100 transition-all text-xs font-bold text-blue-600"
+                    className="py-3 px-6 bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/30 rounded-2xl hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all text-xs font-bold text-blue-600 dark:text-blue-400 cursor-pointer"
                   >
                     Sync Google Calendar
                   </button>
@@ -318,66 +318,66 @@ const Profile = () => {
               {/* Skills & Causes */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Skills */}
-                <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm">
+                <div className="bg-white dark:bg-slate-900 rounded-[40px] p-8 border border-slate-100 dark:border-slate-800/40 shadow-sm">
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 flex items-center justify-center">
                       <HiOutlineBriefcase size={20} />
                     </div>
-                    <h3 className="text-xl font-black text-slate-900">Professional Skills</h3>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Professional Skills</h3>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {profileData.skills.length > 0 ? profileData.skills.map((skill, i) => (
-                      <span key={i} className="px-5 py-2.5 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm border border-slate-100 transition-all">
+                      <span key={i} className="px-5 py-2.5 bg-slate-50 dark:bg-slate-850 text-slate-600 dark:text-slate-350 rounded-2xl font-bold text-sm border border-slate-100 dark:border-slate-800 transition-all">
                         {skill}
                       </span>
                     )) : (
-                      <p className="text-slate-400 font-medium">No skills showcased yet.</p>
+                      <p className="text-slate-400 dark:text-slate-500 font-medium">No skills showcased yet.</p>
                     )}
                   </div>
                 </div>
 
                 {/* Causes */}
-                <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm">
+                <div className="bg-white dark:bg-slate-900 rounded-[40px] p-8 border border-slate-100 dark:border-slate-800/40 shadow-sm">
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-pink-50 dark:bg-pink-950/30 text-pink-600 dark:text-pink-400 flex items-center justify-center">
                       <HiOutlineHeart size={20} />
                     </div>
-                    <h3 className="text-xl font-black text-slate-900">Passionate Causes</h3>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Passionate Causes</h3>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {profileData.causes.length > 0 ? profileData.causes.map((cause, i) => (
-                      <span key={i} className="px-5 py-2.5 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm border border-slate-100 transition-all">
+                      <span key={i} className="px-5 py-2.5 bg-slate-50 dark:bg-slate-850 text-slate-600 dark:text-slate-350 rounded-2xl font-bold text-sm border border-slate-100 dark:border-slate-800 transition-all">
                         # {cause}
                       </span>
                     )) : (
-                      <p className="text-slate-400 font-medium">No causes listed yet.</p>
+                      <p className="text-slate-400 dark:text-slate-500 font-medium">No causes listed yet.</p>
                     )}
                   </div>
                 </div>
               </div>
 
               {/* Ratings and Reviews section */}
-              <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm">
-                <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
+              <div className="bg-white dark:bg-slate-900 rounded-[40px] p-8 border border-slate-100 dark:border-slate-800/40 shadow-sm">
+                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 flex items-center gap-3">
                   <HiOutlineStar className="text-amber-500" /> Community Reviews
                 </h3>
-                <div className="flex gap-8 items-center border-b border-slate-100 pb-6 mb-6">
+                <div className="flex gap-8 items-center border-b border-slate-100 dark:border-slate-800/40 pb-6 mb-6">
                   <div className="text-center">
-                    <div className="text-4xl font-black text-slate-800">4.9</div>
+                    <div className="text-4xl font-black text-slate-800 dark:text-white">4.9</div>
                     <span className="text-xs text-amber-500 font-bold">★★★★★</span>
-                    <p className="text-[10px] uppercase font-black tracking-wider text-slate-400 mt-1">Out of 5 Stars</p>
+                    <p className="text-[10px] uppercase font-black tracking-wider text-slate-400 dark:text-slate-500 mt-1">Out of 5 Stars</p>
                   </div>
                   <div className="flex-grow space-y-2">
-                    <div className="flex items-center gap-3 text-xs font-bold text-slate-500">
+                    <div className="flex items-center gap-3 text-xs font-bold text-slate-500 dark:text-slate-400">
                       <span>5 Star</span>
-                      <div className="flex-grow bg-slate-100 h-2 rounded-full overflow-hidden">
+                      <div className="flex-grow bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                         <div className="bg-amber-400 h-full w-[90%]" />
                       </div>
                       <span>90%</span>
                     </div>
-                    <div className="flex items-center gap-3 text-xs font-bold text-slate-500">
+                    <div className="flex items-center gap-3 text-xs font-bold text-slate-500 dark:text-slate-400">
                       <span>4 Star</span>
-                      <div className="flex-grow bg-slate-100 h-2 rounded-full overflow-hidden">
+                      <div className="flex-grow bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                         <div className="bg-amber-400 h-full w-[10%]" />
                       </div>
                       <span>10%</span>
@@ -386,12 +386,12 @@ const Profile = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <div className="p-4 rounded-3xl bg-slate-50 border border-slate-100">
+                  <div className="p-4 rounded-3xl bg-slate-50 dark:bg-slate-850 border border-slate-100 dark:border-slate-800/40">
                     <div className="flex justify-between mb-2">
-                      <span className="text-xs font-bold text-slate-700">Rahman K. (Requestor)</span>
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Rahman K. (Requestor)</span>
                       <span className="text-[10px] text-amber-500">★★★★★</span>
                     </div>
-                    <p className="text-xs font-medium text-slate-500">Very helpful and arrived on time to help clear storm damage in our local park.</p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Very helpful and arrived on time to help clear storm damage in our local park.</p>
                   </div>
                 </div>
               </div>
@@ -413,15 +413,15 @@ const Profile = () => {
               </div>
 
               {/* Certificate & Achievements Card */}
-              <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm text-center">
-                <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center mx-auto mb-4">
+              <div className="bg-white dark:bg-slate-900 rounded-[40px] p-8 border border-slate-100 dark:border-slate-800/40 shadow-sm text-center">
+                <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/30 text-amber-500 flex items-center justify-center mx-auto mb-4">
                   <HiOutlineStar size={30} />
                 </div>
-                <h3 className="text-lg font-black text-slate-800 mb-1">Impact Certificate</h3>
-                <p className="text-slate-400 text-xs font-medium mb-6">Generate your official volunteer hours certificate to share on social media platforms.</p>
+                <h3 className="text-lg font-black text-slate-800 dark:text-white mb-1">Impact Certificate</h3>
+                <p className="text-slate-400 dark:text-slate-555 text-xs font-medium mb-6">Generate your official volunteer hours certificate to share on social media platforms.</p>
                 <button
                   onClick={() => setShowCertificate(true)}
-                  className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-amber-500/10"
+                  className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-amber-500/10 cursor-pointer"
                 >
                   View Certificate
                 </button>
@@ -447,31 +447,31 @@ const Profile = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowCertificate(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              className="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-xl bg-white rounded-[48px] p-8 shadow-2xl border border-amber-200"
+              className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-[48px] p-8 shadow-2xl border border-amber-200 dark:border-amber-900/30"
             >
-              <div className="border-8 border-double border-amber-400 p-8 rounded-[36px] bg-amber-50/10 text-center">
+              <div className="border-8 border-double border-amber-400 dark:border-amber-700/50 p-8 rounded-[36px] bg-amber-50/10 text-center">
                 <span className="text-4xl">🏆</span>
-                <h2 className="text-3xl font-black text-slate-800 font-serif mt-4">Certificate of Impact</h2>
+                <h2 className="text-3xl font-black text-slate-800 dark:text-white font-serif mt-4">Certificate of Impact</h2>
                 <div className="w-24 h-1 bg-amber-400 mx-auto my-6" />
-                <p className="text-xs uppercase font-black tracking-widest text-slate-400">Awarded to</p>
-                <h3 className="text-2xl font-black text-slate-900 font-serif my-4">{profileData.name}</h3>
-                <p className="text-slate-500 text-sm max-w-md mx-auto">
-                  For outstanding contribution as a volunteer in community help initiatives. Accumulating a total of <span className="font-bold text-slate-900">{profileData.volunteerHours} volunteer hours</span> and earning <span className="font-bold text-slate-900">{profileData.points} impact points</span>.
+                <p className="text-xs uppercase font-black tracking-widest text-slate-400 dark:text-slate-500">Awarded to</p>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white font-serif my-4">{profileData.name}</h3>
+                <p className="text-slate-500 dark:text-slate-455 text-sm max-w-md mx-auto">
+                  For outstanding contribution as a volunteer in community help initiatives. Accumulating a total of <span className="font-bold text-slate-900 dark:text-white">{profileData.volunteerHours} volunteer hours</span> and earning <span className="font-bold text-slate-900 dark:text-white">{profileData.points} impact points</span>.
                 </p>
                 <div className="mt-8 flex justify-between items-end">
                   <div className="text-left">
-                    <span className="text-[9px] uppercase font-black tracking-wider text-slate-400">Issued On</span>
-                    <p className="text-xs font-bold text-slate-700">{new Date().toLocaleDateString()}</p>
+                    <span className="text-[9px] uppercase font-black tracking-wider text-slate-400 dark:text-slate-500">Issued On</span>
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{new Date().toLocaleDateString()}</p>
                   </div>
                   <div className="text-right">
-                    <span className="text-[9px] uppercase font-black tracking-wider text-slate-400">Authority</span>
-                    <p className="text-xs font-serif italic text-slate-700">HandsOn Community</p>
+                    <span className="text-[9px] uppercase font-black tracking-wider text-slate-400 dark:text-slate-500">Authority</span>
+                    <p className="text-xs font-serif italic text-slate-700 dark:text-slate-300">HandsOn Community</p>
                   </div>
                 </div>
               </div>
@@ -495,16 +495,16 @@ const Profile = () => {
                initial={{ opacity: 0, scale: 0.95, y: 20 }}
                animate={{ opacity: 1, scale: 1, y: 0 }}
                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-               className="relative w-full max-w-xl bg-white rounded-[48px] p-8 md:p-12 shadow-2xl overflow-y-auto max-h-[90vh]"
+               className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-[48px] p-8 md:p-12 shadow-2xl overflow-y-auto max-h-[90vh] border border-transparent dark:border-slate-800"
             >
               <div className="mb-10 text-center">
-                <h2 className="text-3xl font-black text-slate-900 mb-2">Update Identity</h2>
-                <p className="text-slate-500 font-medium">Customize your professional profile</p>
+                <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2">Update Identity</h2>
+                <p className="text-slate-500 dark:text-slate-400 font-medium">Customize your professional profile</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Full Name</label>
                   <div className="relative">
                     <HiOutlineUser className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                     <input 
@@ -512,14 +512,14 @@ const Profile = () => {
                       name="name" 
                       value={editFormData.name} 
                       onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
-                      className="w-full pl-14 pr-6 py-5 bg-slate-50 border-none rounded-3xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900" 
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800 border-none rounded-3xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900 dark:text-white focus:outline-none" 
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
                   <div className="relative">
                     <HiOutlineMail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                     <input 
@@ -527,14 +527,14 @@ const Profile = () => {
                       name="email" 
                       value={editFormData.email} 
                       onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
-                      className="w-full pl-14 pr-6 py-5 bg-slate-50 border-none rounded-3xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900" 
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800 border-none rounded-3xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900 dark:text-white focus:outline-none" 
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Expertise (Comma separated)</label>
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Expertise (Comma separated)</label>
                   <div className="relative">
                     <HiOutlineBriefcase className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                     <input 
@@ -543,13 +543,13 @@ const Profile = () => {
                       value={editFormData.skills} 
                       placeholder="UI Design, Writing, Gardening"
                       onChange={(e) => setEditFormData({...editFormData, skills: e.target.value})}
-                      className="w-full pl-14 pr-6 py-5 bg-slate-50 border-none rounded-3xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900" 
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800 border-none rounded-3xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900 dark:text-white focus:outline-none" 
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Causes (Comma separated)</label>
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Causes (Comma separated)</label>
                   <div className="relative">
                     <HiOutlineHeart className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                     <input 
@@ -558,7 +558,7 @@ const Profile = () => {
                       value={editFormData.causes} 
                       placeholder="Climate, Education, Health"
                       onChange={(e) => setEditFormData({...editFormData, causes: e.target.value})}
-                      className="w-full pl-14 pr-6 py-5 bg-slate-50 border-none rounded-3xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900" 
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800 border-none rounded-3xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900 dark:text-white focus:outline-none" 
                     />
                   </div>
                 </div>
@@ -567,14 +567,14 @@ const Profile = () => {
                   <button 
                     type="submit" 
                     disabled={isSaving}
-                    className="flex-1 py-5 bg-blue-600 text-white rounded-3xl font-black shadow-xl shadow-blue-500/30 hover:bg-blue-700 transition-all active:scale-[0.98] disabled:opacity-50"
+                    className="flex-1 py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-3xl font-black shadow-xl shadow-blue-500/30 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                   >
                     {isSaving ? "Synchronizing..." : "Save Changes"}
                   </button>
                   <button 
                     type="button" 
                     onClick={() => setIsEditing(false)}
-                    className="px-8 py-5 bg-slate-100 text-slate-600 rounded-3xl font-black hover:bg-slate-200 transition-all"
+                    className="px-8 py-5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-3xl font-black hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
                   >
                     Cancel
                   </button>

@@ -85,8 +85,8 @@ const Chat = () => {
     <PageWrapper>
       <div className="max-w-5xl mx-auto my-6 px-4 h-[75vh] flex gap-4">
         {/* Conversations Sidebar */}
-        <div className="w-1/3 bg-white/70 backdrop-blur-xl border border-white/20 rounded-3xl p-4 flex flex-col shadow-xl">
-          <h3 className="text-lg font-black text-slate-800 mb-4 px-2">Conversations</h3>
+        <div className="w-1/3 bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-800/40 rounded-3xl p-4 flex flex-col shadow-xl">
+          <h3 className="text-lg font-black text-slate-800 dark:text-white mb-4 px-2">Conversations</h3>
           <div className="flex-grow overflow-y-auto space-y-1">
             {conversations.map((conv) => {
               const active = activePartner?._id === conv.partner._id;
@@ -94,14 +94,14 @@ const Chat = () => {
                 <button
                   key={conv.partner._id}
                   onClick={() => setActivePartner(conv.partner)}
-                  className={`w-full text-left p-3 rounded-2xl flex items-center gap-3 transition-all ${
-                    active ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25" : "hover:bg-slate-50 text-slate-700"
+                  className={`w-full text-left p-3 rounded-2xl flex items-center gap-3 transition-all cursor-pointer ${
+                    active ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25" : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
                   }`}
                 >
                   <FaUserCircle size={32} className={active ? "text-white" : "text-slate-400"} />
                   <div className="overflow-hidden">
                     <h4 className="font-bold text-sm truncate">{conv.partner.name}</h4>
-                    <p className={`text-xs truncate ${active ? "text-white/80" : "text-slate-400"}`}>
+                    <p className={`text-xs truncate ${active ? "text-white/80" : "text-slate-400 dark:text-slate-500"}`}>
                       {conv.lastMessage}
                     </p>
                   </div>
@@ -115,20 +115,20 @@ const Chat = () => {
         </div>
 
         {/* Chat History Panel */}
-        <div className="flex-grow bg-white/70 backdrop-blur-xl border border-white/20 rounded-3xl flex flex-col shadow-xl overflow-hidden">
+        <div className="flex-grow bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-800/40 rounded-3xl flex flex-col shadow-xl overflow-hidden">
           {activePartner ? (
             <>
               {/* Header */}
-              <div className="p-4 border-b border-slate-100 flex items-center gap-3 bg-white/30">
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800/40 flex items-center gap-3 bg-white/30 dark:bg-slate-900/30">
                 <FaUserCircle size={32} className="text-slate-400" />
                 <div>
-                  <h4 className="font-bold text-slate-800">{activePartner.name}</h4>
+                  <h4 className="font-bold text-slate-800 dark:text-white">{activePartner.name}</h4>
                   <span className="text-[10px] uppercase font-black tracking-wider text-green-500 animate-pulse">Online</span>
                 </div>
               </div>
 
               {/* Messages area */}
-              <div className="flex-grow p-4 overflow-y-auto space-y-3 bg-slate-50/30">
+              <div className="flex-grow p-4 overflow-y-auto space-y-3 bg-slate-50/30 dark:bg-slate-950/20">
                 {messages.map((msg) => {
                   const isMe = msg.sender._id === activePartner._id ? false : true;
                   return (
@@ -140,7 +140,7 @@ const Chat = () => {
                         className={`max-w-[70%] p-3 rounded-2xl text-sm ${
                           isMe
                             ? "bg-blue-600 text-white rounded-br-none shadow-md shadow-blue-500/10"
-                            : "bg-white text-slate-700 rounded-bl-none border border-slate-100"
+                            : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-bl-none border border-slate-100 dark:border-slate-700/50"
                         }`}
                       >
                         <p className="leading-relaxed">{msg.message}</p>
@@ -155,13 +155,13 @@ const Chat = () => {
               </div>
 
               {/* Input Footer */}
-              <form onSubmit={handleSendMessage} className="p-4 border-t border-slate-100 bg-white/30 flex gap-2">
+              <form onSubmit={handleSendMessage} className="p-4 border-t border-slate-100 dark:border-slate-800/40 bg-white/30 dark:bg-slate-900/30 flex gap-2">
                 <input
                   type="text"
                   placeholder="Type your message..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  className="flex-grow px-4 py-3 rounded-2xl bg-slate-50 border border-slate-100 focus:border-blue-600 focus:bg-white text-slate-800 text-sm font-bold transition-all focus:outline-none"
+                  className="flex-grow px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 focus:border-blue-600 focus:bg-white dark:focus:bg-slate-900 text-slate-800 dark:text-white text-sm font-bold transition-all focus:outline-none"
                 />
                 <button
                   type="submit"
