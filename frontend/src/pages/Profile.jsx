@@ -286,11 +286,92 @@ const Profile = () => {
             
             {/* Main Dashboard Stats */}
             <div className="lg:col-span-2 space-y-8">
+              
+              {/* Gamified circular progress and economic impact */}
+              <div className="bg-white dark:bg-slate-900 rounded-[40px] p-8 border border-slate-100 dark:border-slate-800/40 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                
+                {/* Circular progress container */}
+                <div className="flex items-center gap-6">
+                  <div className="relative w-28 h-28 flex items-center justify-center">
+                    <svg className="w-full h-full transform -rotate-90">
+                      <circle 
+                        cx="56" cy="56" r="45"
+                        className="stroke-slate-100 dark:stroke-slate-800" 
+                        strokeWidth="8" 
+                        fill="transparent" 
+                      />
+                      <circle 
+                        cx="56" cy="56" r="45"
+                        className="stroke-blue-600 dark:stroke-blue-400" 
+                        strokeWidth="8" 
+                        fill="transparent" 
+                        strokeDasharray={2 * Math.PI * 45}
+                        strokeDashoffset={2 * Math.PI * 45 - (Math.min((profileData.volunteerHours || 12) / 50, 1) * 2 * Math.PI * 45)}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <div className="absolute flex flex-col items-center justify-center text-center">
+                      <span className="text-2xl font-black text-slate-900 dark:text-white">{profileData.volunteerHours || 12}</span>
+                      <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500">Hours</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900 dark:text-white mb-1">Goal: 50 Hours</h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">
+                      You are {Math.round(Math.min((profileData.volunteerHours || 12) / 50 * 100, 100))}% of the way to achieving the Gold Tier status!
+                    </p>
+                  </div>
+                </div>
+
+                {/* Economic impact container */}
+                <div className="p-6 bg-slate-50 dark:bg-slate-850 rounded-3xl border border-slate-100 dark:border-slate-800/40">
+                  <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-900/30">
+                    Economic Contribution
+                  </span>
+                  <div className="text-3xl font-black text-slate-900 dark:text-white mt-4 mb-1">
+                    ${((profileData.volunteerHours || 12) * 31.80).toFixed(2)}
+                  </div>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                    Calculated using standard volunteer valuation factors. Your work has saved local programs valuable operating budget.
+                  </p>
+                </div>
+              </div>
+
+              {/* Stats grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <StatItem icon={HiOutlineUsers} value={profileData.teamsJoined} label="Teams" color="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400" />
                 <StatItem icon={HiOutlineCalendar} value={profileData.eventsJoined} label="Events" color="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" />
                 <StatItem icon={HiOutlineStar} value={profileData.points} label="Points" color="bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" />
                 <StatItem icon={HiOutlineClock} value={profileData.volunteerHours} label="Hours" color="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" />
+              </div>
+
+              {/* Shift Timeline */}
+              <div className="bg-white dark:bg-slate-900 rounded-[40px] p-8 border border-slate-100 dark:border-slate-800/40 shadow-sm">
+                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+                  <HiOutlineCalendar className="text-blue-500" /> Volunteer Timeline
+                </h3>
+                <div className="relative pl-6 border-l border-slate-100 dark:border-slate-800 space-y-8">
+                  {/* Timeline Item 1 */}
+                  <div className="relative">
+                    <div className="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full bg-blue-500 border-4 border-white dark:border-slate-900 shadow" />
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest">Upcoming Shift</span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Tomorrow</span>
+                    </div>
+                    <h4 className="text-sm font-black text-slate-800 dark:text-white">Clean Storm Damage (Park cleanup)</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Confirmed with Rahman K. Duration: 1-3 hours.</p>
+                  </div>
+                  {/* Timeline Item 2 */}
+                  <div className="relative">
+                    <div className="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full bg-slate-300 dark:bg-slate-700 border-4 border-white dark:border-slate-900 shadow" />
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest">Completed Shift</span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">3 days ago</span>
+                    </div>
+                    <h4 className="text-sm font-black text-slate-800 dark:text-white">Food Drive Distribution Helper</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Worked 4.5 hours. Earned 45 points.</p>
+                  </div>
+                </div>
               </div>
 
               {/* Quick Actions Panel */}
@@ -305,12 +386,6 @@ const Profile = () => {
                     className="py-3 px-6 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-750 transition-all text-xs font-bold text-slate-600 dark:text-slate-200 cursor-pointer"
                   >
                     Guided Onboarding
-                  </button>
-                  <button 
-                    onClick={syncGoogleCalendar}
-                    className="py-3 px-6 bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/30 rounded-2xl hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all text-xs font-bold text-blue-600 dark:text-blue-400 cursor-pointer"
-                  >
-                    Sync Google Calendar
                   </button>
                 </div>
               </div>
