@@ -1,16 +1,18 @@
+"use client";
 import axios from "axios";
 import React, { useContext, useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Appcontext } from "../context/Appcontext";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Appcontext } from "../../context/Appcontext";
 import { motion } from "framer-motion";
 import { HiOutlineUser, HiOutlineMail, HiOutlineLockClosed, HiOutlineArrowRight } from "react-icons/hi";
 import { FaGoogle, FaGithub } from "react-icons/fa";
 import { toast } from "react-toastify";
-import PageWrapper from "../components/PageWrapper";
+import PageWrapper from "../../components/PageWrapper";
 
 const SignUp = () => {
   const { backendUrl, setToken } = useContext(Appcontext);
-  const navigate = useNavigate();
+  const router = useRouter();
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
@@ -36,7 +38,7 @@ const SignUp = () => {
         localStorage.setItem("token", res.data.token);
         setToken(res.data.token);
         toast.success(`Account created with ${provider}!`);
-        navigate("/");
+        router.push("/");
       }
     } catch (err) {
       toast.error(`${provider} Sign-Up failed`);
@@ -55,7 +57,7 @@ const SignUp = () => {
         localStorage.setItem("token", res.data.token);
         setToken(res.data.token);
         toast.success("Welcome with Google!");
-        navigate("/");
+        router.push("/");
       }
     } catch (err) {
       toast.error("Google Sign-In failed");
@@ -86,7 +88,7 @@ const SignUp = () => {
         localStorage.setItem("token", response.data.token);
         setToken(response.data.token);
         toast.success("Account created! Let's get started.");
-        navigate("/");
+        router.push("/");
       } else {
         toast.error(response.data.message);
       }
@@ -112,13 +114,13 @@ const SignUp = () => {
         >
           <div className="bg-white dark:bg-slate-900 rounded-[40px] p-8 md:p-12 shadow-2xl border border-white dark:border-slate-800/40">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Join Movement</h2>
-              <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Create an account to start contributing</p>
+              <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Create Account</h2>
+              <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Join the HandsOn community of Change Makers</p>
             </div>
 
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Full Name</label>
+                <label className="text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-widest ml-1">Full Name</label>
                 <div className="relative">
                   <HiOutlineUser className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                   <input
@@ -134,7 +136,7 @@ const SignUp = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
+                <label className="text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-widest ml-1">Email Address</label>
                 <div className="relative">
                   <HiOutlineMail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                   <input
@@ -150,7 +152,7 @@ const SignUp = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Password</label>
+                <label className="text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-widest ml-1">Password</label>
                 <div className="relative">
                   <HiOutlineLockClosed className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                   <input
@@ -159,7 +161,7 @@ const SignUp = () => {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="At least 6 characters"
+                    placeholder="••••••••"
                     className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold text-slate-900 dark:text-white focus:outline-none"
                   />
                 </div>
@@ -171,14 +173,14 @@ const SignUp = () => {
                 className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
                 {loading ? "Creating Account..." : (
-                  <>Sign Up <HiOutlineArrowRight size={18} /></>
+                  <>Get Started <HiOutlineArrowRight size={18} /></>
                 )}
               </button>
             </form>
 
             <div className="relative flex py-4 items-center">
               <div className="flex-grow border-t border-slate-100 dark:border-slate-800/40"></div>
-              <span className="flex-shrink mx-4 text-slate-400 dark:text-slate-500 text-xs font-black uppercase tracking-widest">Or</span>
+              <span className="flex-shrink mx-4 text-slate-400 dark:text-slate-555 text-xs font-black uppercase tracking-widest">Or</span>
               <div className="flex-grow border-t border-slate-100 dark:border-slate-800/40"></div>
             </div>
 
@@ -201,7 +203,7 @@ const SignUp = () => {
             <div className="mt-8 text-center border-t border-slate-100 dark:border-slate-800/40 pt-6">
               <p className="text-slate-500 dark:text-slate-400 font-medium text-sm mb-4">Already have an account?</p>
               <Link
-                to="/login"
+                href="/login"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800/40 rounded-2xl font-black text-xs text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-850 hover:border-slate-200 transition-all uppercase tracking-wider"
               >
                 Sign In Instead

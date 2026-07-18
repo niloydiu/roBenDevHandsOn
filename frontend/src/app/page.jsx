@@ -1,5 +1,6 @@
+"use client";
 import React from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import CommunityRequests from "../components/home/CommunityRequests";
 import FeaturedEvents from "../components/home/FeaturedEvents";
@@ -27,7 +28,7 @@ const Home = () => {
                 <div className={`text-3xl md:text-4xl font-black ${stat.color} mb-1 transition-transform group-hover:scale-110`}>
                   {stat.val}
                 </div>
-                <div className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-tight">
+                <div className="text-sm font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest leading-tight">
                   {stat.label}
                 </div>
               </div>
@@ -55,7 +56,7 @@ const Home = () => {
               </h2>
             </div>
             <Link
-              to="/events"
+              href="/events"
               className="group flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold hover:gap-4 transition-all"
             >
               See all events <HiOutlineArrowRight />
@@ -85,7 +86,7 @@ const Home = () => {
                   Real people, real needs. Sometimes the biggest impact starts with a simple grocery run or a few hours of mentorship. Browse requests from your immediate community.
                 </p>
                 <Link
-                  to="/community-help"
+                  href="/community-help"
                   className="inline-flex items-center justify-center p-4 bg-slate-900 dark:bg-blue-600 text-white rounded-2xl font-bold hover:bg-slate-800 dark:hover:bg-blue-750 transition-all gap-2 shadow-xl shadow-slate-200 dark:shadow-none"
                 >
                   Post a Request <HiOutlineArrowRight />
@@ -117,13 +118,13 @@ const Home = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Link
-                  to="/signup"
+                  href="/signup"
                   className="bg-white text-blue-600 px-8 py-5 rounded-2xl font-black text-center transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg"
                 >
                   Create Your Free Account
                 </Link>
                 <Link
-                  to="/teams"
+                  href="/teams"
                   className="bg-blue-700/50 text-white border border-blue-400/30 backdrop-blur-sm px-8 py-5 rounded-2xl font-black text-center transition-all hover:bg-blue-700"
                 >
                   Browse Volunteering Teams

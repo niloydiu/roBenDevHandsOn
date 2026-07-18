@@ -1,6 +1,8 @@
+"use client";
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import Link from "next/link";
+import { useRouter, useParams } from "next/navigation";
 import { Appcontext } from "../context/Appcontext";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -20,7 +22,7 @@ import EventCompletion from "./EventCompletion";
 
 function EventDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { token, backendUrl, userData, fetchAllEvents } = useContext(Appcontext);
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -63,7 +65,7 @@ function EventDetail() {
   const handleRegisterClick = async () => {
     if (!token) {
       toast.info("Please login to join this event");
-      navigate("/login");
+      router.push("/login");
       return;
     }
 
@@ -89,7 +91,7 @@ function EventDetail() {
       await axios.delete(`${backendUrl}/api/event/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       toast.success("Event deleted successfully");
       fetchAllEvents();
-      navigate("/events");
+      router.push("/events");
     } catch (err) {
       toast.error("Failed to delete event");
     }
@@ -125,7 +127,7 @@ function EventDetail() {
         
         <div className="absolute top-8 left-4 lg:left-10 flex gap-4">
           <button 
-            onClick={() => navigate(-1)}
+            onClick={() => router.back()}
             className="p-3 bg-white/10 backdrop-blur-md rounded-2xl text-white hover:bg-white/20 transition-all border border-white/20"
           >
             <HiOutlineArrowLeft size={24} />
@@ -212,7 +214,7 @@ function EventDetail() {
                 <h3 className="text-xl font-bold mb-6">Event Management</h3>
                 <div className="flex flex-wrap gap-4">
                   <button 
-                    onClick={() => navigate(`/edit-event/${id}`)}
+                    onClick={() => router.push(`/edit-event/${id}`)}
                     className="flex items-center gap-2 px-6 py-4 bg-white/10 hover:bg-white/20 rounded-2xl font-bold transition-all"
                   >
                     <HiOutlinePencilAlt /> Edit Event
@@ -336,3 +338,4 @@ function EventDetail() {
 }
 
 export default EventDetail;
+

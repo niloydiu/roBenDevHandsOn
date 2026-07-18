@@ -1,6 +1,8 @@
+"use client";
 import axios from "axios";
 import React, { useContext, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Appcontext } from "../context/Appcontext";
 import { motion } from "framer-motion";
 import { HiOutlineUserGroup, HiOutlineCalendar, HiOutlineClock, HiOutlineExternalLink, HiOutlinePencilAlt, HiOutlineTrash, HiOutlineLogout } from "react-icons/hi";
@@ -8,7 +10,7 @@ import { toast } from "react-toastify";
 
 const TeamCard = ({ team, handleLeaveTeam, onTeamDeleted }) => {
   const { token, backendUrl, userData } = useContext(Appcontext);
-  const navigate = useNavigate();
+  const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
 
   const teamId = team._id;
@@ -56,7 +58,7 @@ const TeamCard = ({ team, handleLeaveTeam, onTeamDeleted }) => {
             {isTeamCreator() && (
               <>
                 <Link 
-                  to={`/edit-team/${teamId}`}
+                  href={`/edit-team/${teamId}`}
                   className="p-3 text-slate-300 hover:text-amber-500 hover:bg-amber-50 rounded-2xl transition-all"
                 >
                   <HiOutlinePencilAlt size={20} />
@@ -115,7 +117,7 @@ const TeamCard = ({ team, handleLeaveTeam, onTeamDeleted }) => {
         </div>
 
         <Link 
-          to={`/teams/${teamId}`} 
+          href={`/teams/${teamId}`} 
           className="flex items-center justify-center gap-2 w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-blue-600 transition-all active:scale-95 shadow-xl shadow-slate-200"
         >
           Open Workspace <HiOutlineExternalLink size={18} />

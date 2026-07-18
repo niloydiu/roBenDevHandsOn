@@ -1,6 +1,8 @@
+"use client";
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import Link from "next/link";
+import { useRouter, useParams } from "next/navigation";
 import { Appcontext } from "../context/Appcontext";
 import { motion } from "framer-motion";
 import { HiOutlineArrowLeft, HiOutlineUsers, HiOutlineCalendar, HiOutlineClock, HiOutlinePencilAlt, HiOutlineTrash, HiOutlineLogout, HiOutlineGlobeAlt, HiOutlineShieldCheck, HiOutlineUserCircle } from "react-icons/hi";
@@ -20,7 +22,7 @@ const getCauseColor = (cause) => {
 
 function TeamDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { token, backendUrl, userData, isLoggedIn } = useContext(Appcontext);
   const [team, setTeam] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,7 @@ function TeamDetail() {
   const handleJoinTeam = async () => {
     if (!isLoggedIn) {
       toast.info("Please login first");
-      return navigate("/login");
+      return router.push("/login");
     }
     try {
       await axios.post(`${backendUrl}/api/team/join/${id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
@@ -74,7 +76,7 @@ function TeamDetail() {
     try {
       await axios.post(`${backendUrl}/api/team/leave/${id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
       toast.success("Group left successfully");
-      if (isTeamCreator()) navigate("/teams");
+      if (isTeamCreator()) router.push("/teams");
       else {
         const res = await axios.get(`${backendUrl}/api/team/${id}`);
         setTeam(res.data);
@@ -88,7 +90,7 @@ function TeamDetail() {
     try {
       await axios.delete(`${backendUrl}/api/team/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       toast.success("Team disbanded");
-      navigate("/teams");
+      router.push("/teams");
     } catch (err) {
       toast.error("Failed to delete team");
     }
@@ -103,7 +105,7 @@ function TeamDetail() {
   if (!team) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
       <h2 className="text-2xl font-black text-slate-900">Team not found</h2>
-      <Link to="/teams" className="text-blue-600 font-bold hover:underline">Return to Teams</Link>
+      <Link href="/teams" className="text-blue-600 font-bold hover:underline">Return to Teams</Link>
     </div>
   );
 
@@ -124,7 +126,7 @@ function TeamDetail() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <Link to="/teams" className="inline-flex items-center gap-2 text-white/50 hover:text-white mb-10 transition-all font-black text-[10px] uppercase tracking-[0.2em] group">
+            <Link href="/teams" className="inline-flex items-center gap-2 text-white/50 hover:text-white mb-10 transition-all font-black text-[10px] uppercase tracking-[0.2em] group">
               <HiOutlineArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Communities
             </Link>
           </motion.div>
@@ -161,7 +163,7 @@ function TeamDetail() {
             <div className="flex flex-wrap gap-4">
               {isTeamCreator() ? (
                 <>
-                  <button onClick={() => navigate(`/edit-team/${id}`)} className="px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-[20px] font-black text-sm flex items-center gap-2 transition-all border border-white/10">
+                  <button onClick={() => router.push(`/edit-team/${id}`)} className="px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-[20px] font-black text-sm flex items-center gap-2 transition-all border border-white/10">
                     <HiOutlinePencilAlt size={20} /> Edit Squad
                   </button>
                   <button onClick={() => setDeleteConfirm(true)} className="px-8 py-4 bg-red-500/10 hover:bg-red-500/20 text-red-100 backdrop-blur-md rounded-[20px] font-black text-sm flex items-center gap-2 transition-all border border-red-500/20">
@@ -220,7 +222,7 @@ function TeamDetail() {
                   team.events.map((event) => (
                     <Link
                       key={event._id}
-                      to={`/events/${event._id}`}
+                      href={`/events/${event._id}`}
                       className="group flex flex-col md:flex-row md:items-center justify-between gap-6 p-8 bg-slate-50 hover:bg-blue-600 rounded-[32px] transition-all duration-500 border border-transparent hover:shadow-xl hover:shadow-blue-500/20"
                     >
                       <div className="flex gap-6 items-center">

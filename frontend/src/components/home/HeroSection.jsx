@@ -1,15 +1,17 @@
+"use client";
 import React, { useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Appcontext } from "../../context/Appcontext";
 import { motion } from "framer-motion";
 import { HiArrowRight, HiOutlineGlobe, HiOutlineUserGroup, HiOutlineShieldCheck } from "react-icons/hi";
 
 const HeroSection = () => {
   const { isLoggedIn } = useContext(Appcontext);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const navigateToHelpRequests = () => {
-    navigate("/community-help");
+    router.push("/community-help");
     setTimeout(() => {
       const element = document.getElementById("help-requests");
       if (element) element.scrollIntoView({ behavior: "smooth" });
@@ -52,20 +54,20 @@ const HeroSection = () => {
                 {isLoggedIn ? (
                   <button
                     onClick={navigateToHelpRequests}
-                    className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-xl shadow-emerald-500/20 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-750 text-white rounded-2xl font-bold shadow-xl shadow-emerald-500/20 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     Explore Requests <HiArrowRight />
                   </button>
                 ) : (
                   <Link
-                    to="/signup"
-                    className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-xl shadow-emerald-500/20 hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
+                    href="/signup"
+                    className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-750 text-white rounded-2xl font-bold shadow-xl shadow-emerald-500/20 hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
                   >
                     Start Volunteering <HiArrowRight />
                   </Link>
                 )}
                 <Link
-                  to="/events"
+                  href="/events"
                   className="w-full sm:w-auto px-8 py-4 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold hover:bg-slate-50 dark:hover:bg-slate-850 transition-all flex items-center justify-center gap-2"
                 >
                   Browse Events
@@ -135,3 +137,4 @@ const HeroSection = () => {
 };
 
 export default HeroSection;
+

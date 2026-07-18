@@ -1,14 +1,15 @@
+"use client";
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
-import CreateTeamModal from "../components/CreateTeamModal";
-import DiscoverTeamCard from "../components/DiscoverTeamCard";
-import LeaderboardTeamCard from "../components/LeaderboardTeamCard";
-import TeamCard from "../components/TeamCard";
-import { Appcontext } from "../context/Appcontext";
+import CreateTeamModal from "../../components/CreateTeamModal";
+import DiscoverTeamCard from "../../components/DiscoverTeamCard";
+import LeaderboardTeamCard from "../../components/LeaderboardTeamCard";
+import TeamCard from "../../components/TeamCard";
+import { Appcontext } from "../../context/Appcontext";
 import { motion, AnimatePresence } from "framer-motion";
 import { HiOutlineUserGroup, HiOutlineGlobeAlt, HiOutlineChartBar, HiOutlinePlus, HiOutlineEmojiHappy } from "react-icons/hi";
 import { toast } from "react-toastify";
-import PageWrapper from "../components/PageWrapper";
+import PageWrapper from "../../components/PageWrapper";
 
 function Teams() {
   const { backendUrl, token, isLoggedIn } = useContext(Appcontext);

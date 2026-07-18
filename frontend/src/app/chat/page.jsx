@@ -1,11 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
+"use client";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { motion } from "framer-motion";
 import { FaPaperPlane, FaUserCircle } from "react-icons/fa";
 import { toast } from "react-toastify";
 import axios from "axios";
-import PageWrapper from "../components/PageWrapper";
+import { Appcontext } from "../../context/Appcontext";
+import PageWrapper from "../../components/PageWrapper";
 
 const Chat = () => {
+  const { token, backendUrl } = useContext(Appcontext);
   const [conversations, setConversations] = useState([]);
   const [activePartner, setActivePartner] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -13,21 +16,21 @@ const Chat = () => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const token = localStorage.getItem("token");
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "https://ro-ben-dev-hands-on.vercel.app";
   const config = {
     headers: { Authorization: `Bearer ${token}` }
   };
 
   useEffect(() => {
-    fetchConversations();
-  }, []);
+    if (backendUrl && token) {
+      fetchConversations();
+    }
+  }, [backendUrl, token]);
 
   useEffect(() => {
-    if (activePartner) {
+    if (activePartner && backendUrl && token) {
       fetchMessages(activePartner._id);
     }
-  }, [activePartner]);
+  }, [activePartner, backendUrl, token]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

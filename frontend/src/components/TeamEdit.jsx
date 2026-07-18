@@ -1,6 +1,8 @@
+"use client";
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import Link from "next/link";
+import { useRouter, useParams } from "next/navigation";
 import { Appcontext } from "../context/Appcontext";
 import { motion } from "framer-motion";
 import { HiOutlineArrowLeft, HiOutlineCheckCircle, HiOutlineGlobeAlt, HiOutlineShieldCheck, HiOutlineCamera } from "react-icons/hi";
@@ -8,7 +10,7 @@ import { toast } from "react-toastify";
 
 function TeamEdit() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { token, backendUrl } = useContext(Appcontext);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -35,14 +37,14 @@ function TeamEdit() {
         });
       } catch (err) {
         toast.error("Failed to load team details");
-        navigate("/teams");
+        router.push("/teams");
       } finally {
         setLoading(false);
       }
     };
 
     if (id && backendUrl && token) fetchTeamData();
-    else if (!token) navigate("/login");
+    else if (!token) router.push("/login");
   }, [id, backendUrl, token]);
 
   const handleInputChange = (e) => {
@@ -58,7 +60,7 @@ function TeamEdit() {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success("Team settings synchronized");
-      navigate(`/teams/${id}`);
+      router.push(`/teams/${id}`);
     } catch (err) {
       toast.error(err.response?.data?.message || "Update failed");
     } finally {
@@ -76,7 +78,7 @@ function TeamEdit() {
     <div className="min-h-screen bg-slate-50 py-20 px-4">
       <div className="max-w-3xl mx-auto">
         <Link 
-          to={`/teams/${id}`} 
+          href={`/teams/${id}`} 
           className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 mb-8 transition-colors font-black text-[10px] uppercase tracking-widest"
         >
           <HiOutlineArrowLeft size={16} /> Discard Changes
@@ -118,26 +120,26 @@ function TeamEdit() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Identity Name</label>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Squad Name</label>
                 <input
                   type="text"
                   name="name"
                   value={teamData.name}
                   onChange={handleInputChange}
-                  className="w-full bg-slate-50 border-none rounded-[20px] px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 transition-all"
                   required
+                  className="w-full bg-slate-50 rounded-2xl px-5 py-4 text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-blue-550 border-2 border-transparent focus:border-blue-500 transition-all"
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Social Cause</label>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Squad Cause</label>
                 <select
                   name="cause"
                   value={teamData.cause}
                   onChange={handleInputChange}
-                  className="w-full bg-slate-50 border-none rounded-[20px] px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 transition-all appearance-none"
                   required
+                  className="w-full bg-slate-50 rounded-2xl px-5 py-4 text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-blue-550 border-2 border-transparent focus:border-blue-500 transition-all appearance-none cursor-pointer"
                 >
                   <option value="Environment">Environment</option>
                   <option value="Education">Education</option>

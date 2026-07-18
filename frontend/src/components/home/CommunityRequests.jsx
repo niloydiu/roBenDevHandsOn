@@ -1,12 +1,13 @@
+"use client";
 import React, { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { Appcontext } from "../../context/Appcontext";
 import { motion } from "framer-motion";
 import { HiOutlineLocationMarker, HiOutlineUser, HiOutlineChevronRight, HiOutlineClock } from "react-icons/hi";
 import { toast } from "react-toastify";
 
 const CommunityRequests = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const {
     helpRequests,
     loadingHelpRequests,
@@ -27,7 +28,7 @@ const CommunityRequests = () => {
   const handleOfferHelpClick = async (e, requestId) => {
     e.stopPropagation();
     if (!isLoggedIn) {
-      navigate("/signup");
+      router.push("/signup");
       return;
     }
     try {
@@ -61,7 +62,7 @@ const CommunityRequests = () => {
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ delay: idx * 0.1 }}
-          onClick={() => navigate("/community-help")}
+          onClick={() => router.push("/community-help")}
           className="group cursor-pointer bg-white dark:bg-slate-900 rounded-[32px] p-6 border border-slate-100 dark:border-slate-800/40 hover:border-blue-100 dark:hover:border-blue-900/50 hover:shadow-xl hover:shadow-blue-500/5 dark:hover:shadow-none transition-all"
         >
           <div className="flex justify-between items-start mb-4">
@@ -113,14 +114,14 @@ const CommunityRequests = () => {
         </motion.div>
       )) : (
         <div className="py-12 text-center bg-slate-50 dark:bg-slate-900/40 rounded-[32px] border-2 border-dashed border-slate-200 dark:border-slate-800">
-          <p className="text-slate-400 dark:text-slate-500 font-bold text-sm uppercase tracking-widest">Quiet Neighborhood</p>
+          <p className="text-slate-400 dark:text-slate-550 font-bold text-sm uppercase tracking-widest">Quiet Neighborhood</p>
         </div>
       )}
 
       {helpRequests.length > 3 && (
         <motion.button
           whileHover={{ x: 5 }}
-          onClick={() => navigate("/community-help")}
+          onClick={() => router.push("/community-help")}
           className="w-full py-4 flex items-center justify-center gap-2 text-sm font-black text-slate-400 hover:text-blue-600 transition-all uppercase tracking-widest"
         >
           View All Requests <HiOutlineChevronRight size={18} />

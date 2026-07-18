@@ -1,6 +1,7 @@
+"use client";
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useRouter, useParams } from "next/navigation";
 import { Appcontext } from "../context/Appcontext";
 import { motion } from "framer-motion";
 import { 
@@ -16,7 +17,7 @@ import { toast } from "react-toastify";
 
 function EditEvent() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { token, backendUrl, fetchAllEvents } = useContext(Appcontext);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -61,7 +62,7 @@ function EditEvent() {
         });
       } catch (err) {
         toast.error("Failed to load event details");
-        navigate("/events");
+        router.push("/events");
       } finally {
         setLoading(false);
       }
@@ -87,7 +88,7 @@ function EditEvent() {
       });
       toast.success("Event updated successfully!");
       fetchAllEvents();
-      navigate(`/events/${id}`);
+      router.push(`/events/${id}`);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to update event");
     } finally {
@@ -108,7 +109,7 @@ function EditEvent() {
       <div className="bg-white border-b border-slate-100 pt-10 pb-12 mb-12">
         <div className="container mx-auto px-4 lg:px-20">
           <button 
-            onClick={() => navigate(-1)}
+            onClick={() => router.back()}
             className="flex items-center gap-2 text-slate-500 font-bold hover:text-blue-600 transition-colors mb-8 group"
           >
             <HiOutlineArrowLeft className="group-hover:-translate-x-1 transition-transform" />
@@ -265,7 +266,7 @@ function EditEvent() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigate(`/events/${id}`)}
+                    onClick={() => router.push(`/events/${id}`)}
                     className="w-full py-5 bg-white/5 hover:bg-white/10 text-white rounded-[24px] font-bold text-lg transition-all"
                   >
                     Discard Edits
@@ -281,3 +282,4 @@ function EditEvent() {
 }
 
 export default EditEvent;
+

@@ -1,3 +1,4 @@
+"use client";
 import axios from "axios";
 import React, { createContext, useEffect, useState } from "react";
 
@@ -8,12 +9,15 @@ export const Appcontext = createContext();
 const AppcontextProvider = ({ children }) => {
   // Getting backend URL from environment variables, or use localhost if not found
   const backendUrl =
-    import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
   // State for storing the JWT token - check localStorage first
-  const [token, setToken] = useState(
-    localStorage.getItem("token") ? localStorage.getItem("token") : false
-  );
+  const [token, setToken] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("token") || false;
+    }
+    return false;
+  });
   // User data state - null by default until we fetch it
   const [userData, setUserData] = useState(null);
   // Events data - empty array by default

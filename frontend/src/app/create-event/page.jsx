@@ -1,6 +1,7 @@
+"use client";
 import React, { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Appcontext } from "../context/Appcontext";
+import { useRouter } from "next/navigation";
+import { Appcontext } from "../../context/Appcontext";
 import { motion } from "framer-motion";
 import { 
   HiOutlineClipboardCheck, 
@@ -12,10 +13,10 @@ import {
   HiOutlineSparkles
 } from "react-icons/hi";
 import { toast } from "react-toastify";
-import PageWrapper from "../components/PageWrapper";
+import PageWrapper from "../../components/PageWrapper";
 
 function CreateEvent() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { isLoggedIn, token, fetchAllEvents, backendUrl } = useContext(Appcontext);
 
   const [formData, setFormData] = useState({
@@ -36,9 +37,9 @@ function CreateEvent() {
   useEffect(() => {
     if (!isLoggedIn) {
       toast.info("Please login to create an event");
-      navigate("/login");
+      router.push("/login");
     }
-  }, [isLoggedIn, navigate]);
+  }, [isLoggedIn, router]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -80,7 +81,7 @@ function CreateEvent() {
       if (response.ok) {
         toast.success("Event created successfully!");
         fetchAllEvents();
-        navigate("/events");
+        router.push("/events");
       } else {
         toast.error(data.message || "Failed to create event");
       }
@@ -99,7 +100,7 @@ function CreateEvent() {
         <div className="bg-white border-b border-slate-100 pt-10 pb-12 mb-12">
         <div className="container mx-auto px-4 lg:px-20">
           <button 
-            onClick={() => navigate(-1)}
+            onClick={() => router.back()}
             className="flex items-center gap-2 text-slate-500 font-bold hover:text-blue-600 transition-colors mb-8 group"
           >
             <HiOutlineArrowLeft className="group-hover:-translate-x-1 transition-transform" />

@@ -1,11 +1,14 @@
-import React, { useState } from "react";
+"use client";
+import React, { useState, useContext } from "react";
 import { motion } from "framer-motion";
 import { FaHeart, FaChevronRight, FaCreditCard } from "react-icons/fa";
 import { toast } from "react-toastify";
 import axios from "axios";
-import PageWrapper from "../components/PageWrapper";
+import { Appcontext } from "../../context/Appcontext";
+import PageWrapper from "../../components/PageWrapper";
 
 const Support = () => {
+  const { token, backendUrl } = useContext(Appcontext);
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -17,13 +20,11 @@ const Support = () => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const config = {
         headers: { Authorization: `Bearer ${token}` }
       };
 
       // Create mockup checkout session
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || "https://ro-ben-dev-hands-on.vercel.app";
       const res = await axios.post(`${backendUrl}/api/payment/create-session`, {
         amount: Number(amount),
         successUrl: window.location.origin + "/profile",

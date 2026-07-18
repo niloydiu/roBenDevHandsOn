@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useRef } from "react";
 
 const MapComponent = ({ items = [], onMarkerClick, center = [23.8103, 90.4125], zoom = 12 }) => {

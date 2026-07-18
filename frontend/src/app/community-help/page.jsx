@@ -1,6 +1,7 @@
+"use client";
 import React, { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Appcontext } from "../context/Appcontext";
+import { useRouter } from "next/navigation";
+import { Appcontext } from "../../context/Appcontext";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   HiOutlinePlus, 
@@ -15,11 +16,11 @@ import {
   HiX
 } from "react-icons/hi";
 import { toast } from "react-toastify";
-import PageWrapper from "../components/PageWrapper";
-import MapComponent from "../components/MapComponent";
+import PageWrapper from "../../components/PageWrapper";
+import MapComponent from "../../components/MapComponent";
 
 function CommunityHelp() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [viewMode, setViewMode] = useState("list");
   const {
     isLoggedIn,
@@ -88,7 +89,7 @@ function CommunityHelp() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isLoggedIn) return navigate("/signup");
+    if (!isLoggedIn) return router.push("/signup");
 
     try {
       const result = await createHelpRequest(newRequest);
@@ -144,7 +145,7 @@ function CommunityHelp() {
   };
 
   const handleConfirmDrawerSupport = async () => {
-    if (!isLoggedIn) return navigate("/signup");
+    if (!isLoggedIn) return router.push("/signup");
     if (!selectedRequestForDrawer) return;
 
     setProcessingRequest(selectedRequestForDrawer._id);
@@ -162,7 +163,7 @@ function CommunityHelp() {
 
   const handleOfferHelpClick = (request) => {
     if (!isLoggedIn) {
-      navigate("/signup");
+      router.push("/signup");
       return;
     }
     setSelectedRequestForDrawer(request);
@@ -359,7 +360,7 @@ function CommunityHelp() {
                       ) : (
                         <>
                           <button 
-                            onClick={() => navigate(`/chat`)}
+                            onClick={() => router.push(`/chat`)}
                             className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl font-bold text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
                           >
                             Chat

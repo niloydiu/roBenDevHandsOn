@@ -1,6 +1,8 @@
+"use client";
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Appcontext } from "../../context/Appcontext";
 import { motion } from "framer-motion";
 import { HiOutlineCalendar, HiOutlineClock, HiOutlineLocationMarker, HiOutlineUserGroup, HiOutlineArrowRight } from "react-icons/hi";
@@ -8,7 +10,7 @@ import { toast } from "react-toastify";
 
 const FeaturedEvents = () => {
   const { events, loadingEvents, userData, token, backendUrl } = useContext(Appcontext);
-  const navigate = useNavigate();
+  const router = useRouter();
   const [userJoinedEvents, setUserJoinedEvents] = useState({});
   const [processingEvent, setProcessingEvent] = useState(null);
 
@@ -30,7 +32,7 @@ const FeaturedEvents = () => {
   const handleJoinEvent = async (eventId) => {
     if (!token) {
       toast.info("Please login to join this event");
-      navigate("/login");
+      router.push("/login");
       return;
     }
 
@@ -154,14 +156,14 @@ const FeaturedEvents = () => {
                   </div>
                 )}
               </div>
-              <div className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+              <div className="text-xs font-semibold text-slate-400 dark:text-slate-550">
                 {event.participants?.length || 0}/{event.maxParticipants} slots
               </div>
             </div>
 
             <div className="mt-6 flex gap-3">
               <Link
-                to={`/events/${event._id}`}
+                href={`/events/${event._id}`}
                 className="flex-[0.4] py-3 text-center text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 Details
@@ -171,7 +173,7 @@ const FeaturedEvents = () => {
                 disabled={processingEvent === event._id}
                 className={`flex-1 py-3 rounded-2xl text-sm font-bold transition-all cursor-pointer ${
                   hasUserJoinedEvent(event._id)
-                    ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                    ? "bg-slate-100 dark:bg-slate-850 text-slate-900 dark:text-slate-100"
                     : "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200 dark:shadow-none active:scale-95"
                 }`}
               >
@@ -186,3 +188,4 @@ const FeaturedEvents = () => {
 };
 
 export default FeaturedEvents;
+

@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { HiOutlineMail, HiOutlineGlobeAlt } from "react-icons/hi";
 import { FaGithub, FaLinkedin, FaTwitter } from "react-icons/fa";
 
@@ -12,7 +12,7 @@ function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           {/* Brand Column */}
           <div className="space-y-6">
-            <Link to="/" className="flex items-center space-x-2 group">
+            <Link href="/" className="flex items-center space-x-2 group">
               <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">
                 H
               </div>
@@ -48,7 +48,7 @@ function Footer() {
             <ul className="space-y-4">
               {["Events", "Browse Teams", "Community Help", "Leaderboard"].map((item) => (
                 <li key={item}>
-                  <Link to={`/${item.toLowerCase().replace(" ", "-")}`} className="hover:text-blue-500 transition-colors">
+                  <Link href={`/${item.toLowerCase().replace(" ", "-")}`} className="hover:text-blue-500 transition-colors">
                     {item}
                   </Link>
                 </li>
@@ -100,9 +100,9 @@ function Footer() {
             © {currentYear} HandsOn Platform. Built with ❤️ for humans.
           </p>
           <div className="flex gap-8 text-xs text-slate-500 font-medium">
-            <Link to="#" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link to="#" className="hover:text-white transition-colors">Terms of Service</Link>
-            <Link to="#" className="hover:text-white transition-colors">Cookie Policy</Link>
+            <Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="#" className="hover:text-white transition-colors">Terms of Service</Link>
+            <Link href="#" className="hover:text-white transition-colors">Cookie Policy</Link>
           </div>
         </div>
       </div>

@@ -1,10 +1,14 @@
+"use client";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("theme") || "light";
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("theme") || "light";
+    }
+    return "light";
   });
 
   useEffect(() => {

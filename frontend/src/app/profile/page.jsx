@@ -1,3 +1,4 @@
+"use client";
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
 import { 
@@ -18,10 +19,10 @@ import {
   HiOutlineShieldCheck
 } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
-import { Appcontext } from "../context/Appcontext";
+import { Appcontext } from "../../context/Appcontext";
 import { toast } from "react-toastify";
-import PageWrapper from "../components/PageWrapper";
-import Onboarding from "../components/Onboarding";
+import PageWrapper from "../../components/PageWrapper";
+import Onboarding from "../../components/Onboarding";
 
 const Profile = () => {
   const { userData, backendUrl, token, loadUserProfileData } = useContext(Appcontext);

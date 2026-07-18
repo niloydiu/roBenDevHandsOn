@@ -1,16 +1,18 @@
+"use client";
 import axios from "axios";
 import React, { useContext, useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Appcontext } from "../context/Appcontext";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Appcontext } from "../../context/Appcontext";
 import { motion } from "framer-motion";
 import { HiOutlineMail, HiOutlineLockClosed, HiOutlineArrowRight } from "react-icons/hi";
 import { FaGoogle, FaGithub } from "react-icons/fa";
 import { toast } from "react-toastify";
-import PageWrapper from "../components/PageWrapper";
+import PageWrapper from "../../components/PageWrapper";
 
 const Login = () => {
   const { backendUrl, setToken } = useContext(Appcontext);
-  const navigate = useNavigate();
+  const router = useRouter();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
@@ -37,7 +39,7 @@ const Login = () => {
         localStorage.setItem("token", res.data.token);
         setToken(res.data.token);
         toast.success(`Signed in successfully with ${provider}!`);
-        navigate("/");
+        router.push("/");
       }
     } catch (err) {
       toast.error(`${provider} authentication failed`);
@@ -56,7 +58,7 @@ const Login = () => {
         localStorage.setItem("token", res.data.token);
         setToken(res.data.token);
         toast.success("Welcome with Google!");
-        navigate("/");
+        router.push("/");
       }
     } catch (err) {
       toast.error("Google Sign-In failed");
@@ -87,7 +89,7 @@ const Login = () => {
         localStorage.setItem("token", response.data.token);
         setToken(response.data.token);
         toast.success("Welcome back!");
-        navigate("/");
+        router.push("/");
       } else {
         toast.error(response.data.message);
       }
@@ -126,7 +128,7 @@ const Login = () => {
 
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
+                <label className="text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-widest ml-1">Email Address</label>
                 <div className="relative">
                   <HiOutlineMail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                   <input
@@ -143,8 +145,8 @@ const Login = () => {
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center ml-1">
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Password</label>
-                  <Link to="#" className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest hover:text-blue-700">Forgot?</Link>
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-widest">Password</label>
+                  <Link href="#" className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest hover:text-blue-700">Forgot?</Link>
                 </div>
                 <div className="relative">
                   <HiOutlineLockClosed className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
@@ -196,7 +198,7 @@ const Login = () => {
             <div className="mt-8 text-center border-t border-slate-100 dark:border-slate-800/40 pt-6">
               <p className="text-slate-500 dark:text-slate-400 font-medium text-sm mb-4">Don't have an account yet?</p>
               <Link
-                to="/signup"
+                href="/signup"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800/40 rounded-2xl font-black text-xs text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-850 hover:border-slate-200 transition-all uppercase tracking-wider"
               >
                 Create Account
