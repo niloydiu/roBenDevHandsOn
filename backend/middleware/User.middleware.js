@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import User from "../models/User.model.js";
+import prisma from "../configs/prisma.js";
 
 const authUser = async (req, res, next) => {
   try {
@@ -35,14 +35,18 @@ const authUser = async (req, res, next) => {
       return res.status(401).json({ message: "Problem with token" });
     }
 
-    const user = await User.findById(decoded.id).select("-password");
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id }
+    });
 
     if (!user) {
       console.log("No user found with id", decoded.id);
       return res.status(401).json({ message: "User not found" });
     }
 
-    req.user = user;
+    // Omit password from req.user
+    const { password, ...userWithoutPassword } = user;
+    req.user = userWithoutPassword;
     next();
   } catch (error) {
     console.log("CRITICAL AUTH ERROR:");

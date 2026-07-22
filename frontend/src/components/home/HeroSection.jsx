@@ -1,14 +1,75 @@
 "use client";
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Appcontext } from "../../context/Appcontext";
-import { motion } from "framer-motion";
-import { HiArrowRight, HiOutlineGlobe, HiOutlineUserGroup, HiOutlineShieldCheck } from "react-icons/hi";
+import { motion, useInView, useMotionValue, useTransform, animate } from "framer-motion";
+import { ArrowRight, Globe, Users, Clock, ShieldCheck, Sparkles } from "lucide-react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
+
+function CounterNumber({ value, suffix = "" }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
+  
+  useEffect(() => {
+    if (!isInView || !ref.current) return;
+    const numericVal = parseFloat(value.replace(/[^0-9.]/g, ''));
+    if (isNaN(numericVal)) {
+      ref.current.textContent = value + suffix;
+      return;
+    }
+
+    const controls = animate(0, numericVal, {
+      duration: 1.6,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate(latest) {
+        if (ref.current) {
+          if (numericVal % 1 !== 0) {
+            ref.current.textContent = latest.toFixed(1) + suffix;
+          } else if (numericVal >= 1000) {
+            ref.current.textContent = (latest / 1000).toFixed(1) + "k" + suffix;
+          } else {
+            ref.current.textContent = Math.floor(latest) + suffix;
+          }
+        }
+      }
+    });
+
+    return () => controls.stop();
+  }, [isInView, value, suffix]);
+
+  return <span ref={ref}>{value}{suffix}</span>;
+}
 
 const HeroSection = () => {
   const { isLoggedIn } = useContext(Appcontext);
   const router = useRouter();
+  const heroRef = useRef(null);
+  const imageRef = useRef(null);
+
+  useEffect(() => {
+    if (!heroRef.current) return;
+    
+    const ctx = gsap.context(() => {
+      if (imageRef.current) {
+        gsap.to(imageRef.current, {
+          yPercent: 12,
+          ease: "none",
+          scrollTrigger: {
+            trigger: heroRef.current,
+            start: "top top",
+            end: "bottom top",
+            scrub: true
+          }
+        });
+      }
+    }, heroRef);
+
+    return () => ctx.revert();
+  }, []);
 
   const navigateToHelpRequests = () => {
     router.push("/community-help");
@@ -19,117 +80,124 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative overflow-hidden pt-16 pb-20 lg:pt-24 lg:pb-32 bg-slate-50/50 dark:bg-slate-950/20">
-      {/* Background blobs */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100 dark:bg-blue-900/10 rounded-full blur-[120px] opacity-60 animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-100 dark:bg-indigo-900/10 rounded-full blur-[120px] opacity-60 animate-pulse" />
-      </div>
+    <section ref={heroRef} className="relative overflow-hidden pt-12 pb-16 lg:pt-16 lg:pb-24 border-b border-zinc-200/70 dark:border-zinc-800/80 bg-zinc-50/40 dark:bg-zinc-950/20">
+      
+      {/* Subtle Ambient Grid Background */}
+      <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none -z-10" />
 
-      <div className="container mx-auto px-4 md:px-6 lg:px-10">
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-          {/* Content */}
-          <div className="flex-1 text-center lg:text-left">
+      <div className="container mx-auto px-4 md:px-6 lg:px-8 max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+          
+          {/* Main Hero Content */}
+          <div className="lg:col-span-7 space-y-6 text-left">
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.5 }}
+              className="space-y-4"
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-sm font-semibold mb-6 border border-emerald-100 dark:border-emerald-900/20">
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 text-xs font-semibold">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-450 opacity-75"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600 dark:bg-emerald-400"></span>
                 </span>
-                Join 500+ Active Volunteers
+                <span>Connecting 2,400+ Neighborhood Volunteers</span>
               </div>
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] mb-6 text-slate-900 dark:text-white">
-                Lend a <span className="text-emerald-600 dark:text-emerald-400">Hand</span>,<br />
+
+              {/* Title */}
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-bold tracking-tight text-zinc-900 dark:text-white leading-[1.12]">
+                Lend a <span className="text-emerald-600 dark:text-emerald-400">Hand</span>,<br className="hidden sm:inline" />
                 Shape a <span className="text-emerald-600 dark:text-emerald-400">Future</span>.
               </h1>
-              <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                Connect with local opportunities, build impactful teams, and track your social contribution in real-time. Join the community-driven movement that makes a difference.
+
+              {/* Subtitle */}
+              <p className="text-zinc-600 dark:text-zinc-400 text-sm md:text-base leading-relaxed max-w-xl">
+                Connect with hyper-local opportunities, organize volunteer teams, and track your social impact in real time with zero platform fees.
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+              {/* Actions */}
+              <div className="flex flex-wrap items-center gap-3 pt-2">
                 {isLoggedIn ? (
                   <button
                     onClick={navigateToHelpRequests}
-                    className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-750 text-white rounded-2xl font-bold shadow-xl shadow-emerald-500/20 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="btn-saas btn-primary shadow-xs"
                   >
-                    Explore Requests <HiArrowRight />
+                    <span>Explore Requests</span>
+                    <ArrowRight size={15} />
                   </button>
                 ) : (
                   <Link
                     href="/signup"
-                    className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-750 text-white rounded-2xl font-bold shadow-xl shadow-emerald-500/20 hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
+                    className="btn-saas btn-primary shadow-xs"
                   >
-                    Start Volunteering <HiArrowRight />
+                    <span>Start Volunteering</span>
+                    <ArrowRight size={15} />
                   </Link>
                 )}
                 <Link
                   href="/events"
-                  className="w-full sm:w-auto px-8 py-4 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold hover:bg-slate-50 dark:hover:bg-slate-850 transition-all flex items-center justify-center gap-2"
+                  className="btn-saas btn-secondary"
                 >
-                  Browse Events
+                  Browse Opportunities
                 </Link>
               </div>
 
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-4 md:gap-8 mt-12 pt-12 border-t border-slate-100 dark:border-slate-800/40">
+              {/* Stats Band Row */}
+              <div className="grid grid-cols-3 gap-4 pt-8 mt-8 border-t border-zinc-200/80 dark:border-zinc-800/80 max-w-lg">
                 <div>
-                  <div className="text-3xl font-bold text-slate-900 dark:text-white">1.2k+</div>
-                  <div className="text-sm text-slate-500 dark:text-slate-400">Events Held</div>
+                  <div className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-white tracking-tight">
+                    <CounterNumber value="1.2k" suffix="+" />
+                  </div>
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5">Events Held</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-slate-900 dark:text-white">$0</div>
-                  <div className="text-sm text-slate-500 dark:text-slate-400">Platform Fees</div>
+                  <div className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-white tracking-tight">
+                    $0
+                  </div>
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5">Platform Fees</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-slate-900 dark:text-white">5k+</div>
-                  <div className="text-sm text-slate-500 dark:text-slate-400">Hours Logged</div>
+                  <div className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-white tracking-tight">
+                    <CounterNumber value="5k" suffix="+" />
+                  </div>
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5">Hours Logged</div>
                 </div>
               </div>
             </motion.div>
           </div>
 
-          {/* Visual Side */}
-          <div className="flex-1 relative w-full max-w-lg lg:max-w-none">
+          {/* Visual Graphic Side */}
+          <div className="lg:col-span-5 relative">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="relative aspect-square"
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="relative rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-2 shadow-sm overflow-hidden"
             >
-              {/* Decorative Background Elements */}
-              <div className="absolute -top-6 -right-6 w-32 h-32 bg-yellow-100 dark:bg-yellow-950/20 rounded-3xl -z-10 rotate-12 blur-sm" />
-              <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-emerald-100 dark:bg-emerald-950/20 rounded-3xl -z-10 -rotate-12 blur-sm" />
-
-              {/* Main Image Graphic Container */}
-              <div className="w-full h-full glass rounded-[40px] p-4 shadow-2xl overflow-hidden relative group">
+              <div ref={imageRef} className="relative aspect-[4/3] rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800">
                 <img 
                   src="/hero_volunteer_graphic.jpg" 
                   alt="HandsOn Community Volunteers" 
-                  className="w-full h-full object-cover rounded-[32px] transition-transform duration-700 group-hover:scale-105"
+                  className="w-full h-full object-cover"
                 />
                 
-                {/* Visual Glassmorphic Indicators Overlaid */}
-                <motion.div 
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="absolute bottom-8 left-8 right-8 p-4 bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 dark:border-slate-800/40 flex items-center gap-4"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shrink-0">
-                    <HiOutlineGlobe size={20} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+
+                {/* Micro Overlay Badge */}
+                <div className="absolute bottom-3 left-3 right-3 p-3 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-md border border-white/20 dark:border-zinc-800/60 shadow-xs flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-md bg-emerald-600 dark:bg-emerald-500 flex items-center justify-center text-white shrink-0">
+                    <Globe size={16} />
                   </div>
-                  <div>
-                    <div className="font-extrabold text-slate-900 dark:text-white text-sm">Empowering Local Neighborhoods</div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Join a Team • Make Impact</div>
+                  <div className="min-w-0">
+                    <div className="font-semibold text-zinc-900 dark:text-white text-xs truncate">Empowering Local Neighborhoods</div>
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium truncate">Direct Action • Verified Teams</div>
                   </div>
-                </motion.div>
+                </div>
               </div>
             </motion.div>
           </div>
+
         </div>
       </div>
     </section>
@@ -137,4 +205,3 @@ const HeroSection = () => {
 };
 
 export default HeroSection;
-

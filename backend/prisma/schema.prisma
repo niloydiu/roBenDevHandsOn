@@ -1,0 +1,197 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                 String        @id @default(uuid())
+  name               String
+  email              String        @unique
+  password           String?
+  googleId           String?       @unique
+  phoneVerified      Boolean       @default(false)
+  emailVerified      Boolean       @default(false)
+  idVerified         Boolean       @default(false)
+  verificationLevel  String        @default("None") // "None", "Bronze", "Silver", "Gold"
+  avgRating          Float         @default(0)
+  reviewCount        Int           @default(0)
+  streak             Int           @default(0)
+  lastActiveDate     DateTime      @default(now())
+  skills             String        @default("[]") // Stored as JSON array string
+  causes             String        @default("[]") // Stored as JSON array string
+  volunteerHours     Float         @default(0)
+  points             Int           @default(0)
+  eventsCreatedCount Int           @default(0)
+  teamsCreatedCount  Int           @default(0)
+  helpRequestedCount Int           @default(0)
+  helpOfferedCount   Int           @default(0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  // Relations
+  createdEvents      Event[]       @relation("CreatedEvents")
+  joinedEvents       Event[]       @relation("JoinedEvents")
+  createdTeams       Team[]        @relation("CreatedTeams")
+  teamsJoined        TeamMember[]
+  createdRequests    HelpRequest[] @relation("CreatedRequests")
+  helpedRequests     HelpRequest[] @relation("HelpedRequests")
+  
+  sentMessages       Message[]     @relation("SentMessages")
+  receivedMessages   Message[]     @relation("ReceivedMessages")
+  
+  reviewsGiven       Review[]      @relation("ReviewsGiven")
+  reviewsReceived    Review[]      @relation("ReviewsReceived")
+
+  notifications      Notification[]
+  pendingHours       PendingHour[]
+}
+
+model PendingHour {
+  id             String      @id @default(uuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId        String
+  event          Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  hours          Float
+  date           DateTime
+  status         String      @default("pending") // "pending", "approved", "rejected"
+  verifications  String      @default("[]") // Stored as JSON array string of user IDs
+  createdAt      DateTime    @default(now())
+}
+
+model Event {
+  id              String        @id @default(uuid())
+  title           String
+  description     String
+  category        String
+  urgency         String        @default("Medium") // "Low", "Medium", "High", "Emergency"
+  status          String        @default("open") // "open", "accepted", "in-progress", "done", "cancelled"
+  latitude        Float         @default(23.8103)
+  longitude       Float         @default(90.4125)
+  timeCommitment  String        @default("2 hours")
+  recurring       Boolean       @default(false)
+  date            DateTime
+  startTime       String
+  endTime         String
+  location        String
+  maxParticipants Int
+  requirements    String        @default("")
+  image           String        @default("")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  creatorId       String
+  creator         User          @relation("CreatedEvents", fields: [creatorId], references: [id], onDelete: Cascade)
+  participants    User[]        @relation("JoinedEvents")
+  
+  teams           Team[]
+  reviews         Review[]
+  messages        Message[]
+  pendingHours    PendingHour[]
+}
+
+model HelpRequest {
+  id           String    @id @default(uuid())
+  title        String
+  description  String
+  location     String
+  urgencyLevel String    @default("medium") // "low", "medium", "urgent"
+  status       String    @default("open") // "open", "accepted", "in-progress", "done", "cancelled"
+  latitude     Float     @default(23.8103)
+  longitude    Float     @default(90.4125)
+  category     String    @default("general")
+  contactInfo  String
+  offers       Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  creatorId    String
+  creator      User      @relation("CreatedRequests", fields: [creatorId], references: [id], onDelete: Cascade)
+  helpers      User[]    @relation("HelpedRequests")
+  
+  reviews      Review[]
+  messages     Message[]
+}
+
+model Team {
+  id               String       @id @default(uuid())
+  name             String
+  description      String
+  cause            String       // "environment", "education", etc.
+  avatar           String       @default("")
+  isPublic         Boolean      @default(true)
+  memberCount      Int          @default(1)
+  eventsCount      Int          @default(0)
+  hoursContributed Float        @default(0)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  creatorId        String
+  creator          User         @relation("CreatedTeams", fields: [creatorId], references: [id], onDelete: Cascade)
+  members          TeamMember[]
+  events           Event[]
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @default("member") // "admin", "member"
+  joinedAt  DateTime @default(now())
+
+  @@unique([teamId, userId])
+}
+
+model Message {
+  id            String       @id @default(uuid())
+  message       String
+  read          Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  senderId      String
+  sender        User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId   String
+  recipient     User         @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  
+  helpId        String?
+  help          HelpRequest? @relation(fields: [helpId], references: [id], onDelete: SetNull)
+  eventId       String?
+  event         Event?       @relation(fields: [eventId], references: [id], onDelete: SetNull)
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  rating     Int
+  comment    String   @default("")
+  createdAt  DateTime @default(now())
+
+  reviewerId String
+  reviewer   User     @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+  revieweeId String
+  reviewee   User     @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Cascade)
+  
+  helpId     String?
+  help       HelpRequest? @relation(fields: [helpId], references: [id], onDelete: SetNull)
+  eventId    String?
+  event      Event?       @relation(fields: [eventId], references: [id], onDelete: SetNull)
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  type      String   // "message", "application", "event_reminder", "comment"
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  link      String   @default("")
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

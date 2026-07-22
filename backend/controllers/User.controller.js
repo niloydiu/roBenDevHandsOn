@@ -1,71 +1,58 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import validator from "validator";
-import User from "../models/User.model.js";
+import prisma from "../configs/prisma.js";
+
+const parseJsonField = (field) => {
+  try {
+    return JSON.parse(field);
+  } catch (e) {
+    return [];
+  }
+};
 
 // this function lets users register
 const registerUser = async (req, res) => {
   try {
-    // get stuff from request body
     const { name, email, password } = req.body;
 
-    // check if all fields are there
     if (!name || !email || !password) {
-      return res
-        .status(400)
-        .json({ success: false, message: "All fields are required" });
+      return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
-    // find if email already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "Email already registered",
-      });
+      return res.status(400).json({ success: false, message: "Email already registered" });
     }
 
-    // check if email is valid
     if (!validator.isEmail(email)) {
       return res.status(400).json({ success: false, message: "Invalid email" });
     }
 
-    // password needs to be 6+ chars
     if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 6 characters",
-      });
+      return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
     }
 
-    // make password secure with bcrypt
-    console.log("Hashing password...");
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // create user object
-    const userData = {
-      name,
-      email,
-      password: hashedPassword,
-      // adding zeros for counting stuff
-      eventsCreated: 0,
-      teamsCreated: 0,
-      helpRequested: 0,
-      helpOffered: 0,
-    };
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        eventsCreatedCount: 0,
+        teamsCreatedCount: 0,
+        helpRequestedCount: 0,
+        helpOfferedCount: 0,
+        skills: "[]",
+        causes: "[]"
+      }
+    });
 
-    // save user to db
-    const newUser = await User(userData);
-    const user = await newUser.save();
-    console.log("User saved with id: " + user._id);
-
-    // make a token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    const token = jwt.sign({ id: newUser.id }, process.env.JWT_SECRET);
     res.status(201).json({ success: true, token });
   } catch (error) {
-    // if something breaks
-    console.log("ERROR in registerUser:");
-    console.log(error);
+    console.log("ERROR in registerUser:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
@@ -73,44 +60,30 @@ const registerUser = async (req, res) => {
 // this lets users login
 const loginUser = async (req, res) => {
   try {
-    // get email and password
     const { email, password } = req.body;
 
-    // make sure they're not empty
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ success: false, message: "All fields are required" });
+      return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
-    // check email format
     if (!validator.isEmail(email)) {
       return res.status(400).json({ success: false, message: "Invalid email" });
     }
 
-    // look for user
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User not found" });
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !user.password) {
+      return res.status(400).json({ success: false, message: "User not found or invalid credentials" });
     }
 
-    // check if password matches
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid password" });
+      return res.status(400).json({ success: false, message: "Invalid password" });
     } else {
-      // if password is right, make token
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
       res.status(200).json({ success: true, token });
     }
   } catch (error) {
-    // if something breaks
-    console.log("ERROR in loginUser:");
-    console.log(error);
+    console.log("ERROR in loginUser:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
@@ -118,25 +91,42 @@ const loginUser = async (req, res) => {
 // this gets user profile
 const userProfile = async (req, res) => {
   try {
-    // this is how to get related data
-    const user = await User.findById(req.user.id)
-      .select("-password") // don't include password
-      .populate("teams", "name avatar description cause memberCount")
-      .populate("eventsJoined", "title date location")
-      .populate("pendingHours.event", "title date location"); // Added population for pending hours events
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: {
+        teamsJoined: {
+          include: {
+            team: {
+              select: { name: true, avatar: true, description: true, cause: true, memberCount: true }
+            }
+          }
+        },
+        joinedEvents: {
+          select: { title: true, date: true, location: true }
+        },
+        pendingHours: {
+          include: {
+            event: { select: { title: true, date: true, location: true } }
+          }
+        }
+      }
+    });
 
     if (!user) {
-      console.log("No user found with that ID!");
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // return the user
-    res.status(200).json({ success: true, user });
+    const { password, ...userWithoutPassword } = user;
+    userWithoutPassword.skills = parseJsonField(user.skills);
+    userWithoutPassword.causes = parseJsonField(user.causes);
+    
+    // Format teams to match previous behavior
+    userWithoutPassword.teams = user.teamsJoined.map(tj => tj.team);
+    delete userWithoutPassword.teamsJoined;
+
+    res.status(200).json({ success: true, user: userWithoutPassword });
   } catch (error) {
-    console.log("ERROR in userProfile:");
-    console.log(error);
+    console.log("ERROR in userProfile:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -144,41 +134,29 @@ const userProfile = async (req, res) => {
 // this lets user update their profile
 const updateUser = async (req, res) => {
   try {
-    // get the fields to update
     const { name, email, skills, causes } = req.body;
 
-    // check required fields
     if (!name || !email) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Name and email are required" });
+      return res.status(400).json({ success: false, message: "Name and email are required" });
     }
 
-    // save updated user
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user.id, // user ID from auth middleware
-      {
-        name: name, // setting each field
-        email: email,
-        skills: skills, // skills array
-        causes: causes, // causes array
-      },
-      { new: true, runValidators: true } // options to return new doc and validate
-    ).select("-password"); // don't return password
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        name,
+        email,
+        ...(skills && { skills: JSON.stringify(skills) }),
+        ...(causes && { causes: JSON.stringify(causes) })
+      }
+    });
 
-    // check if user exists
-    if (!updatedUser) {
-      console.log("No user found to update!");
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
+    const { password, ...userWithoutPassword } = updatedUser;
+    userWithoutPassword.skills = parseJsonField(updatedUser.skills);
+    userWithoutPassword.causes = parseJsonField(updatedUser.causes);
 
-    console.log("User updated: " + updatedUser._id);
-    res.status(200).json({ success: true, user: updatedUser });
+    res.status(200).json({ success: true, user: userWithoutPassword });
   } catch (error) {
-    console.log("ERROR in updateUser:");
-    console.log(error);
+    console.log("ERROR in updateUser:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
@@ -186,25 +164,23 @@ const updateUser = async (req, res) => {
 // Get all pending hours (admin function)
 const getPendingHours = async (req, res) => {
   try {
-    // Only admins or team leaders should access this
-    // TODO: Add role check here
+    const pendingHours = await prisma.pendingHour.findMany({
+      where: { status: "pending" },
+      include: {
+        user: { select: { name: true, email: true } },
+        event: true
+      }
+    });
 
-    // Get all users with pending hours
-    const users = await User.find({ "pendingHours.status": "pending" })
-      .select("name email pendingHours")
-      .populate("pendingHours.event");
-
+    // Formatting it nicely to roughly match old behavior where it returned users
+    // But returning pending hours directly is cleaner.
     res.status(200).json({
       success: true,
-      pendingHours: users,
+      pendingHours: pendingHours,
     });
   } catch (error) {
     console.error("Error getting pending hours:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error retrieving pending hours",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: "Error retrieving pending hours", error: error.message });
   }
 };
 
@@ -214,56 +190,60 @@ const approveHours = async (req, res) => {
     const { userId, pendingHourId } = req.params;
     const approverId = req.user.id;
 
-    // Find the user
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+    const pendingHour = await prisma.pendingHour.findUnique({
+      where: { id: pendingHourId }
+    });
+
+    if (!pendingHour || pendingHour.userId !== userId) {
+      return res.status(404).json({ success: false, message: "Pending hour entry not found" });
     }
 
-    // Find the pending hour entry
-    const pendingHourEntry = user.pendingHours.id(pendingHourId);
-    if (!pendingHourEntry) {
-      return res.status(404).json({
-        success: false,
-        message: "Pending hour entry not found",
-      });
+    let verifications = parseJsonField(pendingHour.verifications);
+    if (!verifications.includes(approverId)) {
+      verifications.push(approverId);
     }
 
-    // Add the approver to verifications
-    pendingHourEntry.verifications.push(approverId);
+    const pointsEarned = pendingHour.hours * 20;
 
-    // Update status to approved
-    pendingHourEntry.status = "approved";
+    const [updatedPendingHour, updatedUser] = await prisma.$transaction([
+      prisma.pendingHour.update({
+        where: { id: pendingHourId },
+        data: {
+          status: "approved",
+          verifications: JSON.stringify(verifications)
+        }
+      }),
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          volunteerHours: { increment: pendingHour.hours },
+          points: { increment: pointsEarned }
+        },
+        include: { pendingHours: true }
+      })
+    ]);
 
-    // Add hours to user's total volunteer hours
-    user.volunteerHours = (user.volunteerHours || 0) + pendingHourEntry.hours;
-
-    // Award points (20 points per hour)
-    const pointsEarned = pendingHourEntry.hours * 20;
-    user.points = (user.points || 0) + pointsEarned;
-
-    // Save the user
-    await user.save();
+    await prisma.notification.create({
+      data: {
+        type: "application",
+        title: "Hours Approved",
+        message: `Your pending hours have been approved! You earned ${pointsEarned} points.`,
+        userId: userId
+      }
+    });
 
     res.status(200).json({
       success: true,
       message: `Hours approved and ${pointsEarned} points awarded`,
       user: {
-        volunteerHours: user.volunteerHours,
-        points: user.points,
-        pendingHours: user.pendingHours,
+        volunteerHours: updatedUser.volunteerHours,
+        points: updatedUser.points,
+        pendingHours: updatedUser.pendingHours,
       },
     });
   } catch (error) {
     console.error("Error approving hours:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error approving hours",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: "Error approving hours", error: error.message });
   }
 };
 
@@ -273,32 +253,37 @@ const rejectHours = async (req, res) => {
     const { userId, pendingHourId } = req.params;
     const reviewerId = req.user.id;
 
-    // Find the user
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+    const pendingHour = await prisma.pendingHour.findUnique({
+      where: { id: pendingHourId }
+    });
+
+    if (!pendingHour || pendingHour.userId !== userId) {
+      return res.status(404).json({ success: false, message: "Pending hour entry not found" });
     }
 
-    // Find the pending hour entry
-    const pendingHourEntry = user.pendingHours.id(pendingHourId);
-    if (!pendingHourEntry) {
-      return res.status(404).json({
-        success: false,
-        message: "Pending hour entry not found",
-      });
+    let verifications = parseJsonField(pendingHour.verifications);
+    if (!verifications.includes(reviewerId)) {
+      verifications.push(reviewerId);
     }
 
-    // Update status to rejected
-    pendingHourEntry.status = "rejected";
+    const updatedPendingHour = await prisma.pendingHour.update({
+      where: { id: pendingHourId },
+      data: {
+        status: "rejected",
+        verifications: JSON.stringify(verifications)
+      }
+    });
 
-    // Add the reviewer to verifications
-    pendingHourEntry.verifications.push(reviewerId);
+    const user = await prisma.user.findUnique({ where: { id: userId }, include: { pendingHours: true } });
 
-    // Save the user
-    await user.save();
+    await prisma.notification.create({
+      data: {
+        type: "application",
+        title: "Hours Rejected",
+        message: `Your pending hours have been rejected.`,
+        userId: userId
+      }
+    });
 
     res.status(200).json({
       success: true,
@@ -307,11 +292,7 @@ const rejectHours = async (req, res) => {
     });
   } catch (error) {
     console.error("Error rejecting hours:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error rejecting hours",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: "Error rejecting hours", error: error.message });
   }
 };
 
@@ -329,31 +310,34 @@ const googleLogin = async (req, res) => {
 
     const { email, name, sub: googleId } = decoded;
 
-    let user = await User.findOne({ $or: [{ googleId }, { email }] });
+    let user = await prisma.user.findFirst({
+      where: { OR: [{ googleId }, { email }] }
+    });
+
     if (!user) {
-      user = new User({
-        name,
-        email,
-        googleId,
-        verificationStatus: {
+      user = await prisma.user.create({
+        data: {
+          name,
+          email,
+          googleId,
           emailVerified: true,
-          level: "Bronze"
+          verificationLevel: "Bronze"
         }
       });
-      await user.save();
     } else if (!user.googleId) {
-      user.googleId = googleId;
-      await user.save();
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { googleId }
+      });
     }
 
-    const backendToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-    return res.status(200).json({ success: true, token: backendToken, user });
+    const backendToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
+    res.status(200).json({ success: true, token: backendToken, user });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// export all the functions
 export {
   approveHours,
   getPendingHours,

@@ -3,7 +3,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Appcontext } from "../../context/Appcontext";
 import { motion } from "framer-motion";
-import { HiOutlineLocationMarker, HiOutlineUser, HiOutlineChevronRight, HiOutlineClock } from "react-icons/hi";
+import { MapPin, User, Clock, ChevronRight, Heart, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
 
 const CommunityRequests = () => {
@@ -43,89 +43,99 @@ const CommunityRequests = () => {
     }
   };
 
-  const displayRequests = helpRequests.slice(0, 3);
+  const displayRequests = (helpRequests || []).slice(0, 3);
 
   if (loadingHelpRequests) return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {[1, 2, 3].map(i => (
-        <div key={i} className="h-32 bg-slate-100 dark:bg-slate-900 animate-pulse rounded-[32px]" />
+        <div key={i} className="h-28 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/60 dark:border-zinc-800 animate-pulse rounded-xl" />
       ))}
     </div>
   );
 
   return (
-    <div className="space-y-4">
-      {displayRequests.length > 0 ? displayRequests.map((request, idx) => (
-        <motion.div
-          key={request._id}
-          initial={{ opacity: 0, x: -20 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: idx * 0.1 }}
-          onClick={() => router.push("/community-help")}
-          className="group cursor-pointer bg-white dark:bg-slate-900 rounded-[32px] p-6 border border-slate-100 dark:border-slate-800/40 hover:border-blue-100 dark:hover:border-blue-900/50 hover:shadow-xl hover:shadow-blue-500/5 dark:hover:shadow-none transition-all"
-        >
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex items-center gap-2">
-              <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                request.urgencyLevel === 'urgent' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-455 border-rose-100 dark:border-rose-900/40' : 
-                request.urgencyLevel === 'medium' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-455 border-amber-100 dark:border-amber-900/40' : 
-                'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-455 border-emerald-100 dark:border-emerald-900/40'
-              }`}>
-                {request.urgencyLevel}
-              </span>
-              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-1">
-                <HiOutlineClock /> {new Date(request.createdAt).toLocaleDateString()}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-full border border-transparent dark:border-slate-700/50">
-               {request.offers} <span className="text-slate-400 dark:text-slate-550 font-bold uppercase text-[9px]">Offers</span>
-            </div>
-          </div>
+    <div className="space-y-3">
+      {displayRequests.length > 0 ? displayRequests.map((request, idx) => {
+        const requestId = request._id || request.id;
+        const isOffered = hasUserOfferedHelp(requestId);
 
-          <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-            {request.title}
-          </h3>
+        return (
+          <motion.div
+            key={requestId}
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: idx * 0.08, duration: 0.4 }}
+            onClick={() => router.push("/community-help")}
+            className="group cursor-pointer card-saas flex flex-col justify-between gap-3 relative"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                    request.urgencyLevel === 'urgent' 
+                      ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200/50 dark:border-rose-800/40' 
+                      : request.urgencyLevel === 'medium' 
+                        ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200/50 dark:border-amber-800/40' 
+                        : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200/50 dark:border-emerald-800/40'
+                  }`}>
+                    {request.urgencyLevel || "Normal"}
+                  </span>
+                  <span className="text-[11px] text-zinc-400 font-medium flex items-center gap-1">
+                    <Clock size={11} /> {new Date(request.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
 
-          <div className="flex items-center justify-between mt-6">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 dark:text-slate-500">
-                <HiOutlineLocationMarker className="text-blue-500" />
-                {request.location}
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1">
+                  {request.title}
+                </h3>
               </div>
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 dark:text-slate-500">
-                <HiOutlineUser className="text-indigo-500" />
-                {request.createdBy?.name || "Anonymous"}
+
+              <div className="shrink-0 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-md border border-zinc-200/60 dark:border-zinc-700/60">
+                {request.offers || 0} Offers
               </div>
             </div>
 
-            <button
-              onClick={(e) => handleOfferHelpClick(e, request._id)}
-              disabled={processingRequest === request._id}
-              className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
-                hasUserOfferedHelp(request._id)
-                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20"
-                  : "bg-slate-900 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-700 shadow-xl shadow-slate-900/10 active:scale-95"
-              }`}
-            >
-              {processingRequest === request._id ? "..." : hasUserOfferedHelp(request._id) ? "Help Offered" : "Lend Hand"}
-            </button>
-          </div>
-        </motion.div>
-      )) : (
-        <div className="py-12 text-center bg-slate-50 dark:bg-slate-900/40 rounded-[32px] border-2 border-dashed border-slate-200 dark:border-slate-800">
-          <p className="text-slate-400 dark:text-slate-550 font-bold text-sm uppercase tracking-widest">Quiet Neighborhood</p>
+            <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800/60 text-xs">
+              <div className="flex items-center gap-4 text-zinc-500 truncate">
+                <span className="flex items-center gap-1 truncate">
+                  <MapPin size={12} className="text-emerald-500 shrink-0" />
+                  <span className="truncate">{request.location}</span>
+                </span>
+                <span className="hidden sm:flex items-center gap-1 truncate">
+                  <User size={12} className="text-zinc-400 shrink-0" />
+                  <span className="truncate">{request.createdBy?.name || "Neighbor"}</span>
+                </span>
+              </div>
+
+              <button
+                onClick={(e) => handleOfferHelpClick(e, requestId)}
+                disabled={processingRequest === requestId}
+                className={`btn-saas !h-8 !px-3 text-xs shrink-0 ${
+                  isOffered
+                    ? "btn-outline border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                    : "btn-primary"
+                }`}
+              >
+                {processingRequest === requestId ? "..." : isOffered ? "Offered ✓" : "Lend Hand"}
+              </button>
+            </div>
+          </motion.div>
+        );
+      }) : (
+        <div className="p-8 text-center bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <p className="text-zinc-500 text-xs font-medium">No active community help requests.</p>
         </div>
       )}
 
       {helpRequests.length > 3 && (
-        <motion.button
-          whileHover={{ x: 5 }}
+        <button
           onClick={() => router.push("/community-help")}
-          className="w-full py-4 flex items-center justify-center gap-2 text-sm font-black text-slate-400 hover:text-blue-600 transition-all uppercase tracking-widest"
+          className="w-full py-2 flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
         >
-          View All Requests <HiOutlineChevronRight size={18} />
-        </motion.button>
+          <span>View All Requests</span>
+          <ChevronRight size={14} />
+        </button>
       )}
     </div>
   );

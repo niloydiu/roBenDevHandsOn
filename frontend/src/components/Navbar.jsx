@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Appcontext } from "../context/Appcontext";
 import { motion, AnimatePresence } from "framer-motion";
-import { HiOutlineMenuAlt3, HiOutlineX, HiOutlineUser, HiOutlineLogout, HiOutlineLogin, HiOutlineSun, HiOutlineMoon } from "react-icons/hi";
+import { Sun, Moon, Menu, X, User, LogOut, Heart, ArrowRight } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
 const Navbar = () => {
@@ -16,7 +16,7 @@ const Navbar = () => {
   const pathname = usePathname();
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleScroll = () => setScrolled(window.scrollY > 15);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -34,27 +34,38 @@ const Navbar = () => {
   const navLinks = [
     { name: "Feed", path: "/" },
     { name: "Events", path: "/events" },
-    { name: "Action", path: "/community-help" },
+    { name: "Mutual Aid", path: "/community-help" },
+    ...(token ? [{ name: "Teams", path: "/teams" }] : []),
     ...(token ? [{ name: "Chat", path: "/chat" }] : []),
     { name: "Support", path: "/support" },
-    ...(token ? [{ name: "Teams", path: "/teams" }] : []),
   ];
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-[100] transition-all duration-500 ${scrolled ? 'py-4' : 'py-6'}`}>
-      <div className="container mx-auto px-4 md:px-10 lg:px-20">
-        <div className={`relative flex justify-between items-center transition-all duration-500 rounded-[32px] px-8 py-4 ${scrolled ? 'bg-white dark:bg-slate-900 shadow-2xl shadow-slate-200/50 dark:shadow-none border border-transparent dark:border-slate-800/40' : 'bg-white/50 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/30 shadow-sm'}`}>
+    <header 
+      className={`fixed top-0 left-0 w-full z-[100] transition-all duration-200 border-b ${
+        scrolled 
+          ? "bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-zinc-200/80 dark:border-zinc-800/80 shadow-xs py-2.5" 
+          : "bg-white/60 dark:bg-zinc-950/60 backdrop-blur-sm border-zinc-200/40 dark:border-zinc-800/40 py-3"
+      }`}
+    >
+      <div className="container mx-auto px-4 md:px-6 lg:px-8 max-w-7xl">
+        <div className="flex items-center justify-between">
           
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-emerald-600 dark:bg-emerald-500 rounded-xl flex items-center justify-center text-white font-black text-xl group-hover:bg-emerald-750 transition-colors">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-md bg-emerald-600 dark:bg-emerald-500 text-white flex items-center justify-center font-bold text-sm shadow-xs group-hover:bg-emerald-700 dark:group-hover:bg-emerald-400 transition-colors">
               H
             </div>
-            <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">HandsOn</span>
+            <div className="flex flex-col">
+              <span className="text-base font-semibold tracking-tight text-zinc-900 dark:text-white leading-none">
+                HandsOn
+              </span>
+              <span className="text-[10px] text-zinc-400 font-medium tracking-wide">Volunteer Network</span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1.5">
+          <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
               const isActive = pathname === link.path;
               return (
@@ -62,55 +73,60 @@ const Navbar = () => {
                   key={link.path}
                   href={link.path}
                   className={`
-                    px-5 py-2.5 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all
-                    ${isActive ? 'bg-emerald-600 dark:bg-emerald-500 text-white shadow-lg shadow-emerald-500/25' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}
+                    px-3.5 py-1.5 rounded-md text-[13.5px] font-medium transition-colors relative
+                    ${isActive 
+                      ? 'text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50/80 dark:bg-emerald-950/40' 
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100/60 dark:hover:bg-zinc-800/50'
+                    }
                   `}
                 >
                   {link.name}
                 </Link>
               );
             })}
-          </div>
+          </nav>
 
-          {/* Auth & Theme Buttons */}
-          <div className="hidden md:flex items-center gap-4">
+          {/* Action & Theme Controls */}
+          <div className="hidden md:flex items-center gap-3">
             <button
               onClick={toggleTheme}
-              className="p-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl transition-all cursor-pointer"
+              className="w-8 h-8 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
               title="Toggle Theme"
+              aria-label="Toggle Theme"
             >
-              {theme === "light" ? <HiOutlineMoon size={20} /> : <HiOutlineSun size={20} />}
+              {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
             </button>
+
             {token ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Link
                   href="/profile"
-                  className="flex items-center gap-3 px-4 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-2xl transition-all border border-slate-100 dark:border-slate-700 group"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors text-xs font-medium text-zinc-900 dark:text-zinc-200"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-slate-700 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase overflow-hidden">
-                    {userData?.avatar ? <img src={userData.avatar} className="w-full h-full object-cover" /> : userData?.name?.charAt(0) || <HiOutlineUser />}
+                  <div className="w-5 h-5 rounded-full bg-emerald-600 dark:bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold overflow-hidden">
+                    {userData?.avatar ? <img src={userData.avatar} className="w-full h-full object-cover" /> : userData?.name?.charAt(0) || <User size={12} />}
                   </div>
-                  <span className="text-sm font-black text-slate-900 dark:text-slate-200 tracking-tight">{userData?.name?.split(' ')[0] || "Profile"}</span>
+                  <span className="truncate max-w-[100px]">{userData?.name?.split(' ')[0] || "Profile"}</span>
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all cursor-pointer"
+                  className="w-8 h-8 rounded-md border border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center transition-colors cursor-pointer"
                   title="Logout"
                 >
-                  <HiOutlineLogout size={20} />
+                  <LogOut size={14} />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Link
                   href="/login"
-                  className="px-6 py-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-black text-[13px] uppercase tracking-widest transition-all"
+                  className="px-3.5 py-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
                 >
                   Login
                 </Link>
                 <Link
                   href="/signup"
-                  className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-[13px] uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:bg-emerald-700 hover:-translate-y-0.5 transition-all"
+                  className="btn-saas btn-primary text-xs !h-8 !px-3.5"
                 >
                   Join Now
                 </Link>
@@ -118,91 +134,85 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile Toggle */}
+          {/* Mobile Menu Button */}
           <div className="flex md:hidden items-center gap-2">
             <button
               onClick={toggleTheme}
-              className="p-3 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 rounded-2xl transition-all cursor-pointer"
+              className="w-8 h-8 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 flex items-center justify-center cursor-pointer"
             >
-              {theme === "light" ? <HiOutlineMoon size={18} /> : <HiOutlineSun size={18} />}
+              {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
             </button>
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="w-12 h-12 flex items-center justify-center bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl transition-all active:scale-95 cursor-pointer"
+              className="w-8 h-8 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 flex items-center justify-center cursor-pointer"
             >
-              {isMenuOpen ? <HiOutlineX size={24} /> : <HiOutlineMenuAlt3 size={24} />}
+              {isMenuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-x-4 top-24 z-[99] md:hidden"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden px-4 py-4 space-y-3"
           >
-            <div className="bg-white dark:bg-slate-900 rounded-[32px] p-6 shadow-2xl border border-slate-100 dark:border-slate-800/40 overflow-hidden">
-              <div className="flex flex-col gap-2">
-                {navLinks.map((link) => {
-                  const isActive = pathname === link.path;
-                  return (
-                    <Link
-                      key={link.path}
-                      href={link.path}
-                      className={`
-                        px-6 py-4 rounded-[20px] text-sm font-black uppercase tracking-widest transition-all flex items-center justify-between
-                        ${isActive ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}
-                      `}
-                    >
-                      {link.name}
-                      {isActive && <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 shadow-lg shadow-emerald-400" />}
-                    </Link>
-                  );
-                })}
-              </div>
+            <div className="flex flex-col gap-1">
+              {navLinks.map((link) => {
+                const isActive = pathname === link.path;
+                return (
+                  <Link
+                    key={link.path}
+                    href={link.path}
+                    className={`
+                      px-3.5 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-between
+                      ${isActive ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-zinc-600 dark:text-zinc-400'}
+                    `}
+                  >
+                    {link.name}
+                    {isActive && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                  </Link>
+                );
+              })}
+            </div>
 
-              <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800">
-                {token ? (
-                  <div className="space-y-3">
-                    <Link
-                      href="/profile"
-                      className="flex items-center justify-between px-6 py-4 bg-emerald-600 text-white rounded-[24px] font-black text-sm uppercase tracking-widest"
-                    >
-                      My Dashboard <HiOutlineUser size={18} />
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full px-6 py-4 text-red-500 font-black text-sm uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-950/20 rounded-[24px] transition-all cursor-pointer"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-3">
-                    <Link
-                      href="/login"
-                      className="px-6 py-4 text-center text-slate-600 dark:text-slate-400 font-black text-xs uppercase tracking-widest bg-slate-50 dark:bg-slate-800 rounded-[20px]"
-                    >
-                      Login
-                    </Link>
-                    <Link
-                      href="/signup"
-                      className="px-6 py-4 text-center bg-emerald-600 text-white font-black text-xs uppercase tracking-widest rounded-[20px]"
-                    >
-                      Sign Up
-                    </Link>
-                  </div>
-                )}
-              </div>
+            <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
+              {token ? (
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href="/profile"
+                    className="btn-saas btn-outline w-full justify-between"
+                  >
+                    <span>My Profile</span>
+                    <User size={15} />
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="btn-saas text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 w-full justify-between border border-red-200/40 dark:border-red-900/30"
+                  >
+                    <span>Sign Out</span>
+                    <LogOut size={15} />
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <Link href="/login" className="btn-saas btn-secondary text-center justify-center">
+                    Login
+                  </Link>
+                  <Link href="/signup" className="btn-saas btn-primary text-center justify-center">
+                    Join Now
+                  </Link>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </header>
   );
 };
 

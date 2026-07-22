@@ -1,13 +1,13 @@
 import cors from "cors";
 import "dotenv/config";
 import express from "express";
-import connectDB from "./configs/mongoDB.config.js";
 import eventRouter from "./Routes/Event.routes.js";
 import helpRouter from "./Routes/Help.routes.js";
 import teamRouter from "./Routes/Team.routes.js";
 import userRouter from "./Routes/User.routes.js";
 import chatRouter from "./Routes/Chat.routes.js";
 import paymentRouter from "./Routes/Payment.routes.js";
+import prisma from "./configs/prisma.js"; // Import Prisma
 
 const app = express();
 const port = process.env.PORT || 8001;
@@ -20,16 +20,17 @@ app.get("/", (req, res) => {
   res.send("Base route is working fine");
 });
 
-// Database connection middleware for serverless environment
+// Remove connectDB middleware since Prisma handles connection pooling automatically
+// You might want to test the connection once at startup
 app.use(async (req, res, next) => {
   try {
-    await connectDB();
+    // Optionally a lightweight check if needed, but usually unnecessary for every request.
     next();
   } catch (error) {
-    console.error("Database connection failure in middleware:", error.message);
+    console.error("Database error in middleware:", error.message);
     res.status(500).json({
       success: false,
-      message: "Database connection failed. Please ensure MONGO_URI is set correctly.",
+      message: "Database connection failed.",
       error: error.message
     });
   }

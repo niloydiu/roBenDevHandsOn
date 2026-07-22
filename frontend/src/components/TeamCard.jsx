@@ -5,19 +5,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Appcontext } from "../context/Appcontext";
 import { motion } from "framer-motion";
-import { HiOutlineUserGroup, HiOutlineCalendar, HiOutlineClock, HiOutlineExternalLink, HiOutlinePencilAlt, HiOutlineTrash, HiOutlineLogout } from "react-icons/hi";
+import { Users, Calendar, Clock, ExternalLink, Pencil, Trash2, LogOut } from "lucide-react";
 import { toast } from "react-toastify";
 
-const TeamCard = ({ team, handleLeaveTeam, onTeamDeleted }) => {
+const TeamCard = ({ team, handleLeaveTeam, onTeamDeleted = null }) => {
   const { token, backendUrl, userData } = useContext(Appcontext);
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const teamId = team._id;
+  const teamId = team._id || team.id;
+  const userId = userData?._id || userData?.id;
 
   const isTeamCreator = () => {
     if (!userData || !team.creator) return false;
-    return typeof team.creator === "object" ? team.creator._id === userData._id : team.creator === userData._id;
+    const creatorId = typeof team.creator === "object" ? (team.creator._id || team.creator.id) : team.creator;
+    return creatorId === userId;
   };
 
   const handleDeleteTeam = async () => {
@@ -36,93 +38,92 @@ const TeamCard = ({ team, handleLeaveTeam, onTeamDeleted }) => {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -8 }}
-      className="group relative bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 overflow-hidden"
+      className="card-saas flex flex-col justify-between h-full relative"
     >
-      {/* Background Accent */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-[100px] -z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-      <div className="relative z-10">
-        <div className="flex justify-between items-start mb-6">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-[22px] flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-blue-200">
+      <div>
+        <div className="flex justify-between items-start mb-4">
+          <div className="w-12 h-12 rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white font-bold text-lg flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
             {team.avatar ? (
-              <img src={team.avatar} alt={team.name} className="w-full h-full object-cover rounded-[22px]" />
+              <img src={team.avatar} alt={team.name} className="w-full h-full object-cover" />
             ) : (
               team.name.charAt(0)
             )}
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex items-center gap-1">
             {isTeamCreator() && (
               <>
                 <Link 
                   href={`/edit-team/${teamId}`}
-                  className="p-3 text-slate-300 hover:text-amber-500 hover:bg-amber-50 rounded-2xl transition-all"
+                  className="p-1.5 text-zinc-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded-md transition-colors"
+                  title="Edit Team"
                 >
-                  <HiOutlinePencilAlt size={20} />
+                  <Pencil size={15} />
                 </Link>
                 <button 
                   onClick={handleDeleteTeam}
                   disabled={isDeleting}
-                  className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all disabled:opacity-50"
+                  className="p-1.5 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-colors disabled:opacity-50"
+                  title="Delete Team"
                 >
-                  <HiOutlineTrash size={20} />
+                  <Trash2 size={15} />
                 </button>
               </>
             )}
             <button 
               onClick={() => handleLeaveTeam(teamId)}
-              className="p-3 text-slate-300 hover:text-orange-500 hover:bg-orange-50 rounded-2xl transition-all"
+              className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
               title="Leave Team"
             >
-              <HiOutlineLogout size={20} />
+              <LogOut size={15} />
             </button>
           </div>
         </div>
 
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full">
+        <div className="mb-4">
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40 text-[10px] font-semibold rounded-full">
               {team.cause || 'Community'}
             </span>
             {isTeamCreator() && (
-              <span className="px-3 py-1 bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-widest rounded-full">
+              <span className="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-[10px] font-medium rounded-full">
                 Founder
               </span>
             )}
           </div>
-          <h3 className="text-2xl font-black text-slate-900 leading-tight mb-2 group-hover:text-blue-600 transition-colors">
+          <h3 className="text-base font-semibold text-zinc-900 dark:text-white leading-tight mb-1">
             {team.name}
           </h3>
-          <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed font-medium">
+          <p className="text-zinc-600 dark:text-zinc-400 text-xs line-clamp-2 leading-relaxed">
             {team.description}
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 mb-8">
-          <div className="bg-slate-50 p-4 rounded-3xl text-center">
-            <div className="text-lg font-black text-slate-900">{team.memberCount || 0}</div>
-            <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Members</div>
+        <div className="grid grid-cols-3 gap-2 py-3 border-y border-zinc-100 dark:border-zinc-800/60 mb-4 text-center text-xs">
+          <div>
+            <div className="font-semibold text-zinc-900 dark:text-white">{team.memberCount || 0}</div>
+            <div className="text-[10px] text-zinc-400 font-medium">Members</div>
           </div>
-          <div className="bg-slate-50 p-4 rounded-3xl text-center">
-            <div className="text-lg font-black text-slate-900">{team.eventsCount || 0}</div>
-            <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Events</div>
+          <div>
+            <div className="font-semibold text-zinc-900 dark:text-white">{team.eventsCount || 0}</div>
+            <div className="text-[10px] text-zinc-400 font-medium">Events</div>
           </div>
-          <div className="bg-slate-50 p-4 rounded-3xl text-center">
-            <div className="text-lg font-black text-slate-900">{team.hoursContributed || 0}h</div>
-            <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Impact</div>
+          <div>
+            <div className="font-semibold text-zinc-900 dark:text-white">{team.hoursContributed || 0}h</div>
+            <div className="text-[10px] text-zinc-400 font-medium">Impact</div>
           </div>
         </div>
-
-        <Link 
-          href={`/teams/${teamId}`} 
-          className="flex items-center justify-center gap-2 w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-blue-600 transition-all active:scale-95 shadow-xl shadow-slate-200"
-        >
-          Open Workspace <HiOutlineExternalLink size={18} />
-        </Link>
       </div>
+
+      <Link 
+        href={`/teams/${teamId}`} 
+        className="btn-saas btn-primary w-full text-center justify-center text-xs"
+      >
+        <span>Open Workspace</span>
+        <ExternalLink size={13} />
+      </Link>
     </motion.div>
   );
 };
