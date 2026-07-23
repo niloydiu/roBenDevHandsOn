@@ -1,6 +1,6 @@
 "use client";
 export const dynamic = "force-dynamic";
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { Appcontext } from "@/context/Appcontext";
 import PageWrapper from "@/components/PageWrapper";
 import { motion } from "framer-motion";
@@ -14,6 +14,12 @@ import { Lock } from "lucide-react";
 const ChatPage = () => {
   const { token, userData } = useContext(Appcontext);
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [activeContact, setActiveContact] = useState(seedUsers[1]);
   const [messageText, setMessageText] = useState("");
   const [conversations, setConversations] = useState<Record<string, Array<{ sender: string; text: string; time: string }>>>({
@@ -30,6 +36,16 @@ const ChatPage = () => {
       { sender: "them", text: "Thank you for supporting the community food drive!", time: "2 days ago" }
     ]
   });
+
+  if (!mounted) {
+    return (
+      <PageWrapper>
+        <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4 bg-zinc-50/50 dark:bg-zinc-950">
+          <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+        </div>
+      </PageWrapper>
+    );
+  }
 
   if (!token) {
     return (
