@@ -15,7 +15,10 @@ const Navbar = () => {
   const router = useRouter();
   const pathname = usePathname();
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
     const handleScroll = () => setScrolled(window.scrollY > 15);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -97,7 +100,7 @@ const Navbar = () => {
               {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
             </button>
 
-            {token ? (
+            {mounted && token ? (
               <div className="flex items-center gap-2">
                 <Link
                   href="/profile"
@@ -181,7 +184,7 @@ const Navbar = () => {
             </div>
 
             <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
-              {token ? (
+              {mounted && token ? (
                 <div className="flex flex-col gap-2">
                   <Link
                     href="/profile"

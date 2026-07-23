@@ -7,7 +7,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const team = seedTeams.find((t) => t.id === id || (t as any)._id === id);
   if (team) {
-    return NextResponse.json(team);
+    return NextResponse.json({ success: true, team });
   }
-  return NextResponse.json(seedTeams[0]);
+  return NextResponse.json({ success: true, team: seedTeams[0] });
 }
