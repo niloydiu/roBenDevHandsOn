@@ -26,13 +26,8 @@ const SignUp = () => {
       let userEmail = "";
       let userName = "";
 
-      const prompted = window.prompt(`Select or type your ${provider} Account Email to create account:`, `user@${provider.toLowerCase()}.com`);
-      if (prompted === null) {
-        setLoading(false);
-        return; // User cancelled account selection
-      }
-
-      userEmail = prompted.trim() || `volunteer@${provider.toLowerCase()}.com`;
+      // Automatically generate a mock email for the provider without prompting the user
+      userEmail = `user@${provider.toLowerCase()}.com`;
       userName = userEmail.split("@")[0] || `${provider} User`;
 
       let tokenToSave = "";
