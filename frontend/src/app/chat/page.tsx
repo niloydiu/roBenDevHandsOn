@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 import React, { useContext, useState } from "react";
 import { Appcontext } from "@/context/Appcontext";
 import PageWrapper from "@/components/PageWrapper";
