@@ -42,9 +42,9 @@ function EventDetail() {
       setLoading(true);
       let response;
       try {
-        response = await axios.get(`${backendUrl}/api/event/${id}`);
-      } catch (e) {
         response = await axios.get(`/api/event/${id}`);
+      } catch (e) {
+        response = await axios.get(`${backendUrl}/api/event/${id}`);
       }
       
       const eventData = response?.data?.success ? response.data.event : response?.data;
@@ -59,17 +59,12 @@ function EventDetail() {
           setIsRegistered(isUserRegistered);
         }
       } else {
-        const localRes = await axios.get(`/api/event/${id}`);
-        setEvent(localRes.data.event);
+        const remoteRes = await axios.get(`${backendUrl}/api/event/${id}`);
+        setEvent(remoteRes.data.event || remoteRes.data);
       }
     } catch (err) {
       console.error("Error fetching event detail:", err);
-      try {
-        const localRes = await axios.get(`/api/event/${id}`);
-        setEvent(localRes.data.event);
-      } catch (finalErr) {
-        toast.error("Failed to load event details");
-      }
+      toast.error("Failed to load event details");
     } finally {
       setLoading(false);
     }

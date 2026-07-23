@@ -251,16 +251,16 @@ export const AppcontextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setLoadingEvents(true);
       let res;
       try {
-        res = await axios.get(`${backendUrl}/api/event/get-all-events`);
-      } catch (err) {
         res = await axios.get(`/api/event/get-all-events`);
+      } catch (err) {
+        res = await axios.get(`${backendUrl}/api/event/get-all-events`);
       }
       
       if (res && res.data && res.data.success && Array.isArray(res.data.events) && res.data.events.length > 0) {
         setEvents(res.data.events);
       } else {
-        const localRes = await axios.get(`/api/event/get-all-events`);
-        setEvents(localRes.data.events || []);
+        const remoteRes = await axios.get(`${backendUrl}/api/event/get-all-events`);
+        setEvents(remoteRes.data.events || remoteRes.data.data || []);
       }
     } catch (error: any) {
       console.error("Failed to fetch events:", error);
@@ -276,17 +276,17 @@ export const AppcontextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setLoadingHelpRequests(true);
       let res;
       try {
-        res = await axios.get(`${backendUrl}/api/help/get-all-help`);
-      } catch (err) {
         res = await axios.get(`/api/help/get-all-help`);
+      } catch (err) {
+        res = await axios.get(`${backendUrl}/api/help/get-all-help`);
       }
       
       const reqs = res?.data?.helpRequests || res?.data?.data || [];
       if (Array.isArray(reqs) && reqs.length > 0) {
         setHelpRequests(reqs);
       } else {
-        const localRes = await axios.get(`/api/help/get-all-help`);
-        setHelpRequests(localRes.data.helpRequests || []);
+        const remoteRes = await axios.get(`${backendUrl}/api/help/get-all-help`);
+        setHelpRequests(remoteRes.data.helpRequests || []);
       }
     } catch (error) {
       console.error("Error getting help requests:", error);
@@ -452,16 +452,16 @@ export const AppcontextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setLoadingTeams(true);
       let res;
       try {
-        res = await axios.get(`${backendUrl}/api/team/get-all-teams`);
-      } catch (err) {
         res = await axios.get(`/api/team/get-all-teams`);
+      } catch (err) {
+        res = await axios.get(`${backendUrl}/api/team/get-all-teams`);
       }
       const teamsData = Array.isArray(res?.data) ? res.data : (res?.data?.teams || []);
       if (teamsData.length > 0) {
         setTeams(teamsData);
       } else {
-        const localRes = await axios.get(`/api/team/get-all-teams`);
-        setTeams(localRes.data || []);
+        const remoteRes = await axios.get(`${backendUrl}/api/team/get-all-teams`);
+        setTeams(remoteRes.data || []);
       }
     } catch (error) {
       console.error("Failed to fetch teams:", error);
