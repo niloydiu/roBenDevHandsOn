@@ -35,8 +35,8 @@ const Navbar = () => {
     { name: "Feed", path: "/" },
     { name: "Events", path: "/events" },
     { name: "Mutual Aid", path: "/community-help" },
-    ...(token ? [{ name: "Teams", path: "/teams" }] : []),
-    ...(token ? [{ name: "Chat", path: "/chat" }] : []),
+    { name: "Teams", path: "/teams" },
+    { name: "Chat", path: "/chat" },
     { name: "Support", path: "/support" },
   ];
 
