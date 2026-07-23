@@ -28,6 +28,11 @@ function EventDetail() {
   const [loading, setLoading] = useState(true);
   const [isRegistered, setIsRegistered] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  // Client‑side timestamp to avoid SSR mismatch
+  const [clientNow, setClientNow] = React.useState(null);
+  React.useEffect(() => {
+    setClientNow(new Date());
+  }, []);
 
   const userId = userData?._id || userData?.id;
 
@@ -120,7 +125,8 @@ function EventDetail() {
   const participantsCount = event.participants?.length || 0;
   const maxParticipants = parseInt(event.maxParticipants) || 0;
   const progress = Math.min((participantsCount / maxParticipants) * 100, 100);
-  const isEventPast = new Date(event.date) < new Date();
+  /* clientNow moved above */
+  const isEventPast = clientNow ? new Date(event.date) < clientNow : false;
 
   return (
     <motion.div 
@@ -133,7 +139,7 @@ function EventDetail() {
         {event.image ? (
           <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-800" />
+          <img src="https://res.cloudinary.com/demo/image/upload/sample.jpg" alt="Event placeholder" className="w-full h-full object-cover" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent" />
         
@@ -142,7 +148,7 @@ function EventDetail() {
             onClick={() => router.back()}
             className="p-3 bg-white/10 dark:bg-white/20 backdrop-blur-md rounded-2xl text-white hover:bg-white/20 transition-all border border-white/20"
           >
-            <HiOutlineArrowLeft size={24} />
+            <HiOutlineArrowLeft size={14} />
           </button>
         </div>
 
@@ -159,7 +165,7 @@ function EventDetail() {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.1 }}
-              className="text-4xl lg:text-6xl font-black text-white max-w-4xl leading-tight"
+              className="text-3xl lg:text-5xl font-black text-white max-w-4xl leading-tight"
             >
               {event.title}
             </motion.h1>
@@ -174,17 +180,17 @@ function EventDetail() {
             <div className="bg-white dark:bg-zinc-900 rounded-[40px] p-8 lg:p-12 shadow-sm border border-slate-100 dark:border-zinc-700">
               <div className="flex flex-wrap gap-6 mb-12 py-8 border-y border-slate-50">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
-                    <HiOutlineCalendar size={24} />
+                  <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
+                    <HiOutlineCalendar size={14} />
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-slate-400 dark:text-gray-400 uppercase tracking-widest">Date</p>
-                    <p className="font-bold text-slate-900 dark:text-white">{new Date(event.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    <p className="font-bold text-slate-900 dark:text-white">{new Date(event.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
-                    <HiOutlineClock size={24} />
+                    <HiOutlineClock size={14} />
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-slate-400 dark:text-gray-400 uppercase tracking-widest">Time</p>
@@ -192,8 +198,8 @@ function EventDetail() {
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
-                    <HiOutlineLocationMarker size={24} />
+                  <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
+                    <HiOutlineLocationMarker size={14} />
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</p>
@@ -203,16 +209,34 @@ function EventDetail() {
               </div>
 
               <div className="prose prose-slate dark:prose-invert max-w-none">
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-6">About this event</h3>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6">About this event</h3>
                 <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-wrap">
                   {event.description}
                 </p>
               </div>
 
-              {event.requirements && (
+              <div className="mt-8 p-6 bg-slate-50 dark:bg-zinc-900 rounded-[32px]">
+  <h4 className="text-lg font-black text-slate-900 dark:text-white mb-4">What to Expect</h4>
+  <p className="text-slate-600 dark:text-gray-300">
+    Stay tuned for detailed schedule and highlights of this event.
+  </p>
+</div>
+<div className="mt-8 p-6 bg-slate-50 dark:bg-zinc-900 rounded-[32px]">
+  <h4 className="text-lg font-black text-slate-900 dark:text-white mb-4">Schedule</h4>
+  <p className="text-slate-600 dark:text-gray-300">
+    The event schedule will be announced soon. Check back later for updates.
+  </p>
+</div>
+<div className="mt-8 p-6 bg-slate-50 dark:bg-zinc-900 rounded-[32px]">
+  <h4 className="text-lg font-black text-slate-900 dark:text-white mb-4">Speakers</h4>
+  <p className="text-slate-600 dark:text-gray-300">
+    Information about speakers will be provided as the event approaches.
+  </p>
+</div>
+{event.requirements && (
                 <div className="mt-12 p-8 bg-slate-50 dark:bg-zinc-900 rounded-[32px] border border-slate-100 dark:border-zinc-700">
                   <h4 className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white mb-4">
-                    <HiOutlineShieldCheck className="text-blue-600" size={24} />
+                    <HiOutlineShieldCheck className="text-emerald-600" size={20} />
                     Requirements
                   </h4>
                   <p className="text-slate-600 dark:text-gray-300 font-medium">{event.requirements}</p>
@@ -264,7 +288,7 @@ function EventDetail() {
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${progress}%` }}
-                    className={`h-full rounded-full ${progress >= 100 ? 'bg-red-500' : 'bg-blue-600'}`}
+                    className={`h-full rounded-full ${progress >= 100 ? 'bg-red-500' : 'bg-emerald-600'}`}
                   />
                 </div>
                 <p className="text-xs text-slate-400 dark:text-gray-400 mt-4 font-bold uppercase tracking-widest">
@@ -277,20 +301,20 @@ function EventDetail() {
                   <button
                     onClick={handleRegisterClick}
                     disabled={!isRegistered && participantsCount >= maxParticipants}
-                    className={`w-full py-5 rounded-[24px] font-black text-lg shadow-xl shadow-blue-500/10 transition-all active:scale-95 flex items-center justify-center gap-2 ${
-                      isRegistered
-                        ? "bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:shadow-red-500/10 border border-slate-200"
-                        : participantsCount >= maxParticipants
-                        ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                        : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-blue-500/20"
+                    className={`w-full py-1.5 rounded-[8px] text-xs font-medium shadow-xl shadow-emerald-500/10 transition-all active:scale-95 flex items-center justify-center gap-2 ${
+                        isRegistered
+                          ? "bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:shadow-red-500/10 border border-slate-200"
+                          : participantsCount >= maxParticipants
+                          ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                          : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-emerald-500/20"
                     }`}
                   >
                     {isRegistered ? (
-                      <><HiOutlineArrowLeft /> Leave Event</>
+                      <><HiOutlineArrowLeft size={14} /> Leave Event</>
                     ) : participantsCount >= maxParticipants ? (
                       "Event Full"
                     ) : (
-                      <><HiOutlineCheckCircle /> Join Event</>
+                      <><HiOutlineCheckCircle size={14} /> Join Event</>
                     )}
                   </button>
 
@@ -325,19 +349,19 @@ function EventDetail() {
                 </div>
               </div>
 
-              <div className="mt-8 bg-blue-50 rounded-3xl p-6">
-                <h4 className="flex items-center gap-2 text-blue-800 font-bold mb-4">
-                  <HiOutlineEmojiHappy size={20} /> Impact
+              <div className="mt-8 bg-emerald-50 rounded-3xl p-6">
+                <h4 className="flex items-center gap-2 text-emerald-800 font-bold mb-4">
+                  <HiOutlineEmojiHappy size={18} /> Impact
                 </h4>
                 <ul className="space-y-3">
                   <li className="flex gap-2 text-[13px] text-blue-700/80 font-semibold leading-snug">
-                    <span className="text-blue-500">✓</span> Gain verified volunteer hours
+                    <span className="text-emerald-500">✓</span> Gain verified volunteer hours
                   </li>
                   <li className="flex gap-2 text-[13px] text-blue-700/80 font-semibold leading-snug">
-                    <span className="text-blue-500">✓</span> Network with local changemakers
+                    <span className="text-emerald-500">✓</span> Network with local changemakers
                   </li>
                   <li className="flex gap-2 text-[13px] text-blue-700/80 font-semibold leading-snug">
-                    <span className="text-blue-500">✓</span> Support {event.category} causes
+                    <span className="text-emerald-500">✓</span> Support {event.category} causes
                   </li>
                 </ul>
               </div>

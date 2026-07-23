@@ -91,14 +91,16 @@ const Navbar = () => {
 
           {/* Action & Theme Controls */}
           <div className="hidden md:flex items-center gap-3">
-            <button
-              onClick={toggleTheme}
-              className="w-8 h-8 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
-              title="Toggle Theme"
-              aria-label="Toggle Theme"
-            >
-              {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
-            </button>
+            {mounted && (
+              <button
+                onClick={toggleTheme}
+                className="w-8 h-8 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
+                title="Toggle Theme"
+                aria-label="Toggle Theme"
+              >
+                {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
+              </button>
+            )}
 
             {mounted && token ? (
               <div className="flex items-center gap-2">
@@ -143,7 +145,7 @@ const Navbar = () => {
               onClick={toggleTheme}
               className="w-8 h-8 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 flex items-center justify-center cursor-pointer"
             >
-              {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
+              {mounted ? (theme === "light" ? <Moon size={15} /> : <Sun size={15} />) : <Sun size={15} />}
             </button>
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
