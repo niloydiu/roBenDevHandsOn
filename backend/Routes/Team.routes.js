@@ -30,6 +30,9 @@ teamRouter.get("/public", getPublicTeams);
 
 teamRouter.get("/leaderboard", getTeamLeaderboard);
 
+teamRouter.get("/", getAllTeams);
+teamRouter.get("/get-all-teams", getAllTeams);
+
 teamRouter.get("/:id", getTeamById);
 
 export default teamRouter;

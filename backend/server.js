@@ -36,15 +36,15 @@ app.use(async (req, res, next) => {
   }
 });
 
-app.use("/api/user", userRouter);
-app.use("/api/event", eventRouter);
-app.use("/api/help", helpRouter);
-app.use("/api/team", teamRouter);
-app.use("/api/chat", chatRouter);
-app.use("/api/payment", paymentRouter);
+app.use(["/api/user", "/user"], userRouter);
+app.use(["/api/event", "/event"], eventRouter);
+app.use(["/api/help", "/help"], helpRouter);
+app.use(["/api/team", "/team"], teamRouter);
+app.use(["/api/chat", "/chat"], chatRouter);
+app.use(["/api/payment", "/payment"], paymentRouter);
 
 // Start server if not running under Vercel serverless environment
-if (process.env.VERCEL !== "1" && process.env.VERCEL_ENV !== "production") {
+if (!process.env.VERCEL) {
   app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
   });

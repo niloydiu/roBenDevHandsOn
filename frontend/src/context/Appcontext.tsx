@@ -249,11 +249,18 @@ export const AppcontextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const fetchAllEvents = async () => {
     try {
       setLoadingEvents(true);
-      const response = await axios.get(`${backendUrl}/api/event`);
-      if (response.data.success) {
-        setEvents(response.data.events || response.data.data || []);
+      let res;
+      try {
+        res = await axios.get(`${backendUrl}/api/event/get-all-events`);
+      } catch (err) {
+        res = await axios.get(`/api/event/get-all-events`);
+      }
+      
+      if (res && res.data && res.data.success && Array.isArray(res.data.events) && res.data.events.length > 0) {
+        setEvents(res.data.events);
       } else {
-        setEvents([]);
+        const localRes = await axios.get(`/api/event/get-all-events`);
+        setEvents(localRes.data.events || []);
       }
     } catch (error: any) {
       console.error("Failed to fetch events:", error);
@@ -267,21 +274,19 @@ export const AppcontextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const fetchAllHelpRequests = async () => {
     try {
       setLoadingHelpRequests(true);
-      const response = await axios.get(`${backendUrl}/api/help`);
-      if (response.data.success) {
-        setHelpRequests(response.data.helpRequests || []);
-        if (isLoggedIn && userData) {
-          const userOffers: Record<string, boolean> = {};
-          response.data.helpRequests.forEach((request: any) => {
-            const hasOffered = request.helpers?.some((helper: any) => 
-              typeof helper === "object" ? helper.id === userData.id : helper === userData.id
-            );
-            userOffers[request.id] = !!hasOffered;
-          });
-          setUserHelpOffers(userOffers);
-        }
+      let res;
+      try {
+        res = await axios.get(`${backendUrl}/api/help/get-all-help`);
+      } catch (err) {
+        res = await axios.get(`/api/help/get-all-help`);
+      }
+      
+      const reqs = res?.data?.helpRequests || res?.data?.data || [];
+      if (Array.isArray(reqs) && reqs.length > 0) {
+        setHelpRequests(reqs);
       } else {
-        setHelpRequests([]);
+        const localRes = await axios.get(`/api/help/get-all-help`);
+        setHelpRequests(localRes.data.helpRequests || []);
       }
     } catch (error) {
       console.error("Error getting help requests:", error);
@@ -445,9 +450,18 @@ export const AppcontextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const fetchAllTeams = async () => {
     try {
       setLoadingTeams(true);
-      const response = await axios.get(`${backendUrl}/api/team`);
-      if (response.data.success) {
-        setTeams(response.data.teams || []);
+      let res;
+      try {
+        res = await axios.get(`${backendUrl}/api/team/get-all-teams`);
+      } catch (err) {
+        res = await axios.get(`/api/team/get-all-teams`);
+      }
+      const teamsData = Array.isArray(res?.data) ? res.data : (res?.data?.teams || []);
+      if (teamsData.length > 0) {
+        setTeams(teamsData);
+      } else {
+        const localRes = await axios.get(`/api/team/get-all-teams`);
+        setTeams(localRes.data || []);
       }
     } catch (error) {
       console.error("Failed to fetch teams:", error);

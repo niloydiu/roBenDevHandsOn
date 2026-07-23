@@ -13,6 +13,7 @@ import authUser from "../middleware/User.middleware.js";
 const router = express.Router();
 
 router.get("/", getAllHelp);
+router.get("/get-all-help", getAllHelp);
 
 router.get("/:id", getHelpById);
 

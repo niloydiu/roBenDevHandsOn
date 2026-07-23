@@ -14,6 +14,7 @@ import authUser from "../middleware/User.middleware.js";
 const eventRouter = express.Router();
 
 eventRouter.get("/", getAllEvents);
+eventRouter.get("/get-all-events", getAllEvents);
 
 eventRouter.get("/:id", getEventById);
 
