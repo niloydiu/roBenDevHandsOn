@@ -99,23 +99,13 @@ const HeroSection = () => {
 
               {/* Actions */}
               <div className="flex flex-wrap items-center gap-3 pt-2">
-                {isLoggedIn ? (
-                  <button
-                    onClick={navigateToHelpRequests}
-                    className="btn-saas btn-primary shadow-xs"
-                  >
-                    <span>Explore Requests</span>
-                    <ArrowRight size={15} />
-                  </button>
-                ) : (
-                  <Link
-                    href="/signup"
-                    className="btn-saas btn-primary shadow-xs"
-                  >
-                    <span>Start Volunteering</span>
-                    <ArrowRight size={15} />
-                  </Link>
-                )}
+                <Link
+                  href={isLoggedIn ? "/community-help" : "/signup"}
+                  className="btn-saas btn-primary shadow-xs"
+                >
+                  <span>{isLoggedIn ? "Explore Requests" : "Start Volunteering"}</span>
+                  <ArrowRight size={15} />
+                </Link>
                 <Link
                   href="/events"
                   className="btn-saas btn-secondary"

@@ -129,7 +129,7 @@ function EventDetail() {
       className="min-h-screen pb-20 bg-slate-50/50 dark:bg-slate-900/80"
     >
       {/* Hero Section */}
-      <div className="relative h-[45vh] lg:h-[60vh] overflow-hidden">
+      <div className="relative h-[45vh] lg:h-[60vh] overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-800">
         {event.image ? (
           <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
         ) : (
@@ -140,7 +140,7 @@ function EventDetail() {
         <div className="absolute top-8 left-4 lg:left-10 flex gap-4">
           <button 
             onClick={() => router.back()}
-            className="p-3 bg-white/10 backdrop-blur-md rounded-2xl text-white hover:bg-white/20 transition-all border border-white/20"
+            className="p-3 bg-white/10 dark:bg-white/20 backdrop-blur-md rounded-2xl text-white hover:bg-white/20 transition-all border border-white/20"
           >
             <HiOutlineArrowLeft size={24} />
           </button>
@@ -151,7 +151,7 @@ function EventDetail() {
             <motion.span 
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              className="inline-block px-4 py-1.5 bg-blue-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest mb-4"
+              className="inline-block px-4 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 rounded-full text-[10px] font-black uppercase tracking-widest mb-4"
             >
               {event.category}
             </motion.span>
