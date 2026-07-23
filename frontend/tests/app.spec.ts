@@ -56,7 +56,7 @@ test.describe("HandsOn Platform UI/UX & E2E Tests", () => {
   test("Team Detail page loads team details cleanly", async ({ page }) => {
     await page.goto("/teams/t-1");
     await expect(page.locator("h1")).toContainText("Green Earth Action Corps");
-    await expect(page.getByText("Hours Contributed")).toBeVisible();
+    await expect(page.getByText("Collective Impact")).toBeVisible();
   });
 
   test("Support page renders donation form and preset options", async ({ page }) => {
