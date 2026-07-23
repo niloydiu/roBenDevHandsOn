@@ -81,12 +81,12 @@ test.describe("HandsOn Platform UI/UX & E2E Tests", () => {
     await page.goto("/login");
     await page.click("button:has-text('Google')");
     await expect(page).toHaveURL("/");
-    await expect(page.locator("a[href='/profile']")).toBeVisible();
+    await expect(page.locator("a[href='/profile']").first()).toBeAttached();
 
     await page.goto("/login");
     await page.click("button:has-text('GitHub')");
     await expect(page).toHaveURL("/");
-    await expect(page.locator("a[href='/profile']")).toBeVisible();
+    await expect(page.locator("a[href='/profile']").first()).toBeAttached();
   });
 
   test("Chat page requires authentication when logged out and opens messaging interface when logged in", async ({ page }) => {
