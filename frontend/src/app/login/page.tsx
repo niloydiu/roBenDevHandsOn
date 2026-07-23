@@ -26,14 +26,8 @@ const Login = () => {
       let userEmail = "";
       let userName = "";
 
-      // Try prompt user for their specific Google/GitHub account email to simulate interactive account selection
-      const prompted = window.prompt(`Select or type your ${provider} Account Email to sign in:`, `user@${provider.toLowerCase()}.com`);
-      if (prompted === null) {
-        setLoading(false);
-        return; // User cancelled account selection
-      }
-
-      userEmail = prompted.trim() || `volunteer@${provider.toLowerCase()}.com`;
+      // Automatically use a mock email for the provider without prompting the user
+      userEmail = `user@${provider.toLowerCase()}.com`;
       userName = userEmail.split("@")[0] || `${provider} User`;
 
       let tokenToSave = "";
@@ -57,7 +51,12 @@ const Login = () => {
       localStorage.setItem("token", tokenToSave);
       setToken(tokenToSave);
       toast.success(`Signed in as ${userEmail} via ${provider}!`);
-      router.push("/");
+      // Navigate to home after mock login
+      if (router && typeof router.replace === "function") {
+        router.replace("/");
+      } else {
+        window.location.href = "/";
+      }
     } catch (err) {
       toast.error(`${provider} authentication failed`);
     } finally {
