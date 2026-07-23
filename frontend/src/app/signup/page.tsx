@@ -31,9 +31,13 @@ const SignUp = () => {
       }));
       const mockJwt = `${header}.${payload}.mocksignature`;
       
-      const res = await axios.post(`${backendUrl}/api/user/google`, {
-        token: mockJwt
-      });
+      let res;
+      try {
+        res = await axios.post("/api/user/google", { token: mockJwt });
+      } catch (e) {
+        res = await axios.post(`${backendUrl}/api/user/google`, { token: mockJwt });
+      }
+
       if (res.data.success) {
         localStorage.setItem("token", res.data.token);
         setToken(res.data.token);
@@ -51,7 +55,13 @@ const SignUp = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post(`${backendUrl}/api/user/register`, formData);
+      let response;
+      try {
+        response = await axios.post("/api/user/signup", formData);
+      } catch (e) {
+        response = await axios.post(`${backendUrl}/api/user/register`, formData);
+      }
+
       if (response.data.success) {
         localStorage.setItem("token", response.data.token);
         setToken(response.data.token);

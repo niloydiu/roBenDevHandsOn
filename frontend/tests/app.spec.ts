@@ -76,4 +76,14 @@ test.describe("HandsOn Platform UI/UX & E2E Tests", () => {
     await expect(page.locator("h2")).toContainText("Create Account");
     await expect(page.locator("button:has-text('Get Started')")).toBeVisible();
   });
+
+  test("Google and GitHub authentication sign in successfully", async ({ page }) => {
+    await page.goto("/login");
+    await page.click("button:has-text('Google')");
+    await expect(page).toHaveURL("/");
+
+    await page.goto("/login");
+    await page.click("button:has-text('GitHub')");
+    await expect(page).toHaveURL("/");
+  });
 });
