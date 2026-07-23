@@ -23,9 +23,22 @@ const Login = () => {
   const triggerMockLogin = async (provider: string) => {
     setLoading(true);
     try {
+      let userEmail = "";
+      let userName = "";
+
+      // Try prompt user for their specific Google/GitHub account email to simulate interactive account selection
+      const prompted = window.prompt(`Select or type your ${provider} Account Email to sign in:`, `user@${provider.toLowerCase()}.com`);
+      if (prompted === null) {
+        setLoading(false);
+        return; // User cancelled account selection
+      }
+
+      userEmail = prompted.trim() || `volunteer@${provider.toLowerCase()}.com`;
+      userName = userEmail.split("@")[0] || `${provider} User`;
+
       let tokenToSave = "";
       try {
-        const res = await axios.post("/api/user/google", { provider });
+        const res = await axios.post("/api/user/google", { provider, email: userEmail, name: userName });
         if (res.data && res.data.success && res.data.token) {
           tokenToSave = res.data.token;
         }
@@ -34,16 +47,16 @@ const Login = () => {
       if (!tokenToSave) {
         const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
         const payload = btoa(JSON.stringify({
-          email: `${provider.toLowerCase()}.volunteer@handson.org`,
-          name: `${provider} Volunteer`,
-          sub: `${provider.toLowerCase()}-volunteer-id-12345`
+          email: userEmail,
+          name: userName,
+          sub: `${provider.toLowerCase()}-${Date.now()}`
         }));
         tokenToSave = `${header}.${payload}.mocksignature`;
       }
 
       localStorage.setItem("token", tokenToSave);
       setToken(tokenToSave);
-      toast.success(`Signed in successfully with ${provider}!`);
+      toast.success(`Signed in as ${userEmail} via ${provider}!`);
       router.push("/");
     } catch (err) {
       toast.error(`${provider} authentication failed`);
