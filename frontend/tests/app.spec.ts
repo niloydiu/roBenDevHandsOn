@@ -77,17 +77,24 @@ test.describe("HandsOn Platform UI/UX & E2E Tests", () => {
     await expect(page.locator("button:has-text('Get Started')")).toBeVisible();
   });
 
-  test("Google and GitHub authentication sign in successfully", async ({ page }) => {
+  test("Google and GitHub authentication sign in successfully and display profile button in Navbar", async ({ page }) => {
     await page.goto("/login");
     await page.click("button:has-text('Google')");
     await expect(page).toHaveURL("/");
+    await expect(page.locator("a[href='/profile']")).toBeVisible();
 
     await page.goto("/login");
     await page.click("button:has-text('GitHub')");
     await expect(page).toHaveURL("/");
+    await expect(page.locator("a[href='/profile']")).toBeVisible();
   });
 
-  test("Chat page renders messaging interface", async ({ page }) => {
+  test("Chat page requires authentication when logged out and opens messaging interface when logged in", async ({ page }) => {
+    await page.goto("/chat");
+    await expect(page.locator("h2")).toContainText("Authentication Required");
+
+    await page.goto("/login");
+    await page.click("button:has-text('Google')");
     await page.goto("/chat");
     await expect(page.locator("h1")).toContainText("Volunteer Messages");
     await expect(page.getByPlaceholder(/Message/i)).toBeVisible();

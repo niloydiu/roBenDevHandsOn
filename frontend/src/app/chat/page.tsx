@@ -7,8 +7,13 @@ import { motion } from "framer-motion";
 import { MessageSquare, Send, User, ShieldCheck, Search, Circle } from "lucide-react";
 import { seedUsers } from "@/lib/data";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Lock } from "lucide-react";
+
 const ChatPage = () => {
-  const { userData } = useContext(Appcontext);
+  const { token, userData } = useContext(Appcontext);
+  const router = useRouter();
   const [activeContact, setActiveContact] = useState(seedUsers[1]);
   const [messageText, setMessageText] = useState("");
   const [conversations, setConversations] = useState<Record<string, Array<{ sender: string; text: string; time: string }>>>({
@@ -25,6 +30,32 @@ const ChatPage = () => {
       { sender: "them", text: "Thank you for supporting the community food drive!", time: "2 days ago" }
     ]
   });
+
+  if (!token) {
+    return (
+      <PageWrapper>
+        <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4 bg-zinc-50/50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+          <div className="w-full max-w-md card-saas p-8 text-center shadow-sm">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-4">
+              <Lock size={22} />
+            </div>
+            <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight mb-2">Authentication Required</h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6">
+              Please sign in to access direct volunteer messaging and coordinate community initiatives.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <Link href="/login" className="btn-saas btn-primary text-xs px-6">
+                Sign In
+              </Link>
+              <Link href="/signup" className="btn-saas btn-secondary text-xs px-6">
+                Create Account
+              </Link>
+            </div>
+          </div>
+        </div>
+      </PageWrapper>
+    );
+  }
 
   const activeMessages = conversations[activeContact.id] || [
     { sender: "them", text: `Hello! Excited to collaborate with you on HandsOn initiatives.`, time: "Just now" }

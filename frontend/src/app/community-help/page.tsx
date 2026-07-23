@@ -364,7 +364,14 @@ function CommunityHelp() {
                           ) : (
                             <>
                               <button 
-                                onClick={() => router.push(`/chat`)}
+                                onClick={() => {
+                                  if (!isLoggedIn) {
+                                    toast.info("Please sign in to message volunteers");
+                                    router.push("/login");
+                                  } else {
+                                    router.push("/chat");
+                                  }
+                                }}
                                 className="btn-saas btn-secondary !h-8 !px-3 text-xs"
                               >
                                 <MessageSquare size={13} />
