@@ -99,4 +99,15 @@ test.describe("HandsOn Platform UI/UX & E2E Tests", () => {
     await expect(page.locator("h1")).toContainText("Volunteer Messages");
     await expect(page.getByPlaceholder(/Message/i)).toBeVisible();
   });
+
+  test("Profile page requires authentication when logged out and displays volunteer profile when logged in", async ({ page }) => {
+    await page.goto("/profile");
+    await expect(page.locator("h2")).toContainText("Authentication Required");
+
+    await page.goto("/login");
+    await page.click("button:has-text('Google')");
+    await page.goto("/profile");
+    await expect(page.getByText("Volunteer Hours")).toBeVisible();
+    await expect(page.getByText("Impact Points")).toBeVisible();
+  });
 });

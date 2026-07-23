@@ -23,16 +23,26 @@ const Login = () => {
   const triggerMockLogin = async (provider: string) => {
     setLoading(true);
     try {
-      const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-      const payload = btoa(JSON.stringify({
-        email: `${provider.toLowerCase()}.volunteer@handson.org`,
-        name: `${provider} Volunteer`,
-        sub: `${provider.toLowerCase()}-volunteer-id-12345`
-      }));
-      const mockJwt = `${header}.${payload}.mocksignature`;
+      let tokenToSave = "";
+      try {
+        const res = await axios.post("/api/user/google", { provider });
+        if (res.data && res.data.success && res.data.token) {
+          tokenToSave = res.data.token;
+        }
+      } catch (e) {}
 
-      localStorage.setItem("token", mockJwt);
-      setToken(mockJwt);
+      if (!tokenToSave) {
+        const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+        const payload = btoa(JSON.stringify({
+          email: `${provider.toLowerCase()}.volunteer@handson.org`,
+          name: `${provider} Volunteer`,
+          sub: `${provider.toLowerCase()}-volunteer-id-12345`
+        }));
+        tokenToSave = `${header}.${payload}.mocksignature`;
+      }
+
+      localStorage.setItem("token", tokenToSave);
+      setToken(tokenToSave);
       toast.success(`Signed in successfully with ${provider}!`);
       router.push("/");
     } catch (err) {
@@ -46,16 +56,29 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-      const payload = btoa(JSON.stringify({
-        email: formData.email,
-        name: formData.email.split("@")[0],
-        sub: "user-id-12345"
-      }));
-      const mockJwt = `${header}.${payload}.mocksignature`;
+      let tokenToSave = "";
+      try {
+        const res = await axios.post("/api/user/login", {
+          email: formData.email,
+          password: formData.password
+        });
+        if (res.data && res.data.success && res.data.token) {
+          tokenToSave = res.data.token;
+        }
+      } catch (e) {}
 
-      localStorage.setItem("token", mockJwt);
-      setToken(mockJwt);
+      if (!tokenToSave) {
+        const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+        const payload = btoa(JSON.stringify({
+          email: formData.email,
+          name: formData.email.split("@")[0] || "Volunteer",
+          sub: "user-id-12345"
+        }));
+        tokenToSave = `${header}.${payload}.mocksignature`;
+      }
+
+      localStorage.setItem("token", tokenToSave);
+      setToken(tokenToSave);
       toast.success("Welcome back!");
       router.push("/");
     } catch (error: any) {
@@ -139,15 +162,17 @@ const Login = () => {
 
           <div className="grid grid-cols-2 gap-2 mb-4">
             <button 
+              type="button"
               onClick={() => triggerMockLogin("Google")}
-              className="btn-saas btn-secondary text-xs"
+              className="btn-saas btn-secondary text-xs justify-center"
             >
               <FaGoogle size={13} />
               <span>Google</span>
             </button>
             <button 
+              type="button"
               onClick={() => triggerMockLogin("GitHub")}
-              className="btn-saas btn-secondary text-xs"
+              className="btn-saas btn-secondary text-xs justify-center"
             >
               <FaGithub size={13} />
               <span>GitHub</span>
