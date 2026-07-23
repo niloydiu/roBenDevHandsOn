@@ -7,10 +7,7 @@ import FeaturedEvents from "../components/home/FeaturedEvents";
 import HeroSection from "../components/home/HeroSection";
 import { ArrowRight, Calendar, Heart, Users, Sparkles, ShieldCheck } from "lucide-react";
 import PageWrapper from "../components/PageWrapper";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-gsap.registerPlugin(ScrollTrigger);
 
 function StatCounter({ value, label }: { value: string; label: string }) {
   const ref = useRef<HTMLDivElement>(null);

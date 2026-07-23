@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Users, Globe, Trophy, Plus, Smile } from "lucide-react";
 import { toast } from "react-toastify";
 import PageWrapper from "../../components/PageWrapper";
+import Pagination from "../../components/Pagination";
 
 function Teams() {
   const { backendUrl, token, isLoggedIn } = useContext(Appcontext);
@@ -28,19 +29,63 @@ function Teams() {
   });
 
   const [activeTab, setActiveTab] = useState("myTeams");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [causeFilter, setCauseFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 6;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, causeFilter]);
+
+  const filterTeamList = (list: any) => {
+    if (!Array.isArray(list)) return [];
+    return list.filter(team => {
+      if (!team) return false;
+      const matchesSearch = !searchQuery || (team.name || "").toLowerCase().includes(searchQuery.toLowerCase()) || (team.description || "").toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCause = causeFilter === "All" || team.cause === causeFilter;
+      return matchesSearch && matchesCause;
+    });
+  };
+
+  const filteredMyTeams = filterTeamList(myTeams);
+  const filteredPublicTeams = filterTeamList(publicTeams);
 
   const fetchTeams = async () => {
     setLoading(true);
     try {
-      const myPromise = isLoggedIn ? axios.get(`${backendUrl}/api/team/my-teams`, { headers: { Authorization: `Bearer ${token}` } }) : Promise.resolve({ data: [] });
-      const [myRes, publicRes, topRes] = await Promise.all([
-        myPromise,
-        axios.get(`${backendUrl}/api/team/public`),
-        axios.get(`${backendUrl}/api/team/leaderboard`)
-      ]);
-      setMyTeams(myRes.data || []);
-      setPublicTeams(publicRes.data || []);
-      setTopTeams(topRes.data || []);
+      let myData: any = [];
+      if (isLoggedIn) {
+        try {
+          const res = await axios.get(`${backendUrl}/api/team/my-teams`, { headers: { Authorization: `Bearer ${token}` } });
+          myData = res.data?.teams || res.data || [];
+        } catch {
+          const res = await axios.get(`/api/team/my-teams`);
+          myData = res.data?.teams || res.data || [];
+        }
+      }
+
+      let publicData: any = [];
+      try {
+        const res = await axios.get(`${backendUrl}/api/team/public`);
+        publicData = res.data?.teams || res.data || [];
+      } catch {
+        const res = await axios.get(`/api/team/public`);
+        publicData = res.data?.teams || res.data || [];
+      }
+
+      let topData: any = [];
+      try {
+        const res = await axios.get(`${backendUrl}/api/team/leaderboard`);
+        topData = res.data?.teams || res.data || [];
+      } catch {
+        const res = await axios.get(`/api/team/leaderboard`);
+        topData = res.data?.teams || res.data || [];
+      }
+
+      setMyTeams(Array.isArray(myData) ? myData : []);
+      setPublicTeams(Array.isArray(publicData) ? publicData : []);
+      setTopTeams(Array.isArray(topData) ? topData : []);
     } catch (err) {
       toast.error("Failed to load teams");
     } finally {
@@ -123,31 +168,54 @@ function Teams() {
 
         <div className="container mx-auto px-4 md:px-6 lg:px-8 max-w-7xl mt-6">
           
-          {/* Navigation Tabs */}
-          <div className="flex border-b border-zinc-200 dark:border-zinc-800 mb-6 gap-2">
-            {tabs.map(tab => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
-                    isActive 
-                      ? "border-emerald-600 dark:border-emerald-400 text-emerald-600 dark:text-emerald-400" 
-                      : "border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
-                  }`}
-                >
-                  <Icon size={14} />
-                  <span>{tab.label}</span>
-                  {tab.count !== undefined && (
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+          {/* Search & Cause Filters */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-6 items-center justify-between">
+            <div className="flex border-b border-zinc-200 dark:border-zinc-800 gap-2 w-full sm:w-auto">
+              {tabs.map(tab => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
+                      isActive 
+                        ? "border-emerald-600 dark:border-emerald-400 text-emerald-600 dark:text-emerald-400" 
+                        : "border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <Icon size={14} />
+                    <span>{tab.label}</span>
+                    {tab.count !== undefined && (
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                placeholder="Search teams by name..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="input-saas !h-9 text-xs w-full sm:w-48"
+              />
+              <select
+                value={causeFilter}
+                onChange={e => setCauseFilter(e.target.value)}
+                className="input-saas !h-9 text-xs w-full sm:w-40"
+              >
+                <option value="All">All Causes</option>
+                <option value="Environment">Environment</option>
+                <option value="Education">Education</option>
+                <option value="Community">Community</option>
+                <option value="Disaster Relief">Disaster Relief</option>
+              </select>
+            </div>
           </div>
 
           <AnimatePresence mode="wait">
@@ -167,38 +235,80 @@ function Teams() {
               >
                 {activeTab === "myTeams" && (
                   <div>
-                    {myTeams.length === 0 ? (
+                    {filteredMyTeams.length === 0 ? (
                       <div className="card-saas !p-12 text-center">
                         <Smile size={32} className="mx-auto mb-3 text-zinc-400" />
-                        <h3 className="text-base font-semibold text-zinc-900 dark:text-white mb-1">You haven't joined any teams yet</h3>
-                        <p className="text-zinc-500 text-xs mb-4">Discover public volunteer teams or create your own.</p>
-                        <button 
-                          onClick={() => setActiveTab("discover")}
-                          className="btn-saas btn-primary text-xs"
-                        >
-                          Explore Public Teams
-                        </button>
+                        <h3 className="text-base font-semibold text-zinc-900 dark:text-white mb-1">
+                          {myTeams.length === 0 ? "You haven't joined any teams yet" : "No matching teams found"}
+                        </h3>
+                        <p className="text-zinc-500 text-xs mb-4">
+                          {myTeams.length === 0 ? "Discover public volunteer teams or create your own." : "Try adjusting your search query or cause filter."}
+                        </p>
+                        {myTeams.length === 0 && (
+                          <button 
+                            onClick={() => setActiveTab("discover")}
+                            className="btn-saas btn-primary text-xs"
+                          >
+                            Explore Public Teams
+                          </button>
+                        )}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {myTeams.map(team => (
-                          <TeamCard key={team._id || team.id} team={team} handleLeaveTeam={handleLeaveTeam} />
-                        ))}
-                      </div>
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={`myTeams-${currentPage}`}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                        >
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {filteredMyTeams.slice((currentPage - 1) * pageSize, currentPage * pageSize).map(team => (
+                              <TeamCard key={team._id || team.id} team={team} handleLeaveTeam={handleLeaveTeam} />
+                            ))}
+                          </div>
+                          {filteredMyTeams.length > pageSize && (
+                            <Pagination
+                              currentPage={currentPage}
+                              totalPages={Math.ceil(filteredMyTeams.length / pageSize)}
+                              onPageChange={setCurrentPage}
+                            />
+                          )}
+                        </motion.div>
+                      </AnimatePresence>
                     )}
                   </div>
                 )}
 
                 {activeTab === "discover" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {publicTeams.length === 0 ? (
-                      <div className="col-span-full card-saas !p-12 text-center text-zinc-500 text-xs">
-                        No public teams registered yet.
+                  <div>
+                    {filteredPublicTeams.length === 0 ? (
+                      <div className="card-saas !p-12 text-center text-zinc-500 text-xs">
+                        {publicTeams.length === 0 ? "No public teams registered yet." : "No teams matching search criteria."}
                       </div>
                     ) : (
-                      publicTeams.map(team => (
-                        <DiscoverTeamCard key={team._id || team.id} team={team} handleJoinTeam={handleJoinTeam} myTeams={myTeams} />
-                      ))
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={`discover-${currentPage}`}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                        >
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {filteredPublicTeams.slice((currentPage - 1) * pageSize, currentPage * pageSize).map(team => (
+                              <DiscoverTeamCard key={team._id || team.id} team={team} handleJoinTeam={handleJoinTeam} myTeams={myTeams} />
+                            ))}
+                          </div>
+                          {filteredPublicTeams.length > pageSize && (
+                            <Pagination
+                              currentPage={currentPage}
+                              totalPages={Math.ceil(filteredPublicTeams.length / pageSize)}
+                              onPageChange={setCurrentPage}
+                            />
+                          )}
+                        </motion.div>
+                      </AnimatePresence>
                     )}
                   </div>
                 )}

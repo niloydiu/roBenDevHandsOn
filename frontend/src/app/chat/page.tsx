@@ -22,6 +22,7 @@ const ChatPage = () => {
 
   const [activeContact, setActiveContact] = useState(seedUsers[1]);
   const [messageText, setMessageText] = useState("");
+  const [contactSearch, setContactSearch] = useState("");
   const [conversations, setConversations] = useState<Record<string, Array<{ sender: string; text: string; time: string }>>>({
     "u-2": [
       { sender: "them", text: "Hi! Thanks for offering to help with the Dhanmondi Lake Cleanup.", time: "10:30 AM" },
@@ -36,6 +37,13 @@ const ChatPage = () => {
       { sender: "them", text: "Thank you for supporting the community food drive!", time: "2 days ago" }
     ]
   });
+
+  const availableContacts = seedUsers.filter(
+    u => u.id !== userData?.id && (
+      u.name.toLowerCase().includes(contactSearch.toLowerCase()) ||
+      u.email.toLowerCase().includes(contactSearch.toLowerCase())
+    )
+  );
 
   if (!mounted) {
     return (
@@ -111,44 +119,52 @@ const ChatPage = () => {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={14} />
                   <input
                     type="text"
-                    placeholder="Search conversations..."
+                    value={contactSearch}
+                    onChange={(e) => setContactSearch(e.target.value)}
+                    placeholder="Search volunteers or email..."
                     className="input-saas pl-8 text-xs w-full"
                   />
                 </div>
               </div>
 
               <div className="flex-1 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800/50">
-                {seedUsers.slice(1, 6).map((contact) => {
-                  const isSelected = contact.id === activeContact.id;
-                  const lastMsg = conversations[contact.id]?.[conversations[contact.id]?.length - 1];
-                  return (
-                    <button
-                      key={contact.id}
-                      onClick={() => setActiveContact(contact)}
-                      className={`w-full p-4 flex items-center gap-3 text-left transition-colors ${
-                        isSelected 
-                          ? "bg-emerald-50/60 dark:bg-emerald-950/20 border-l-4 border-emerald-600 dark:border-emerald-500" 
-                          : "hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40"
-                      }`}
-                    >
-                      <div className="relative shrink-0">
-                        <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-sm shadow-xs">
-                          {contact.name.charAt(0)}
+                {availableContacts.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-zinc-400">
+                    No volunteers found matching "{contactSearch}"
+                  </div>
+                ) : (
+                  availableContacts.map((contact) => {
+                    const isSelected = contact.id === activeContact.id;
+                    const lastMsg = conversations[contact.id]?.[conversations[contact.id]?.length - 1];
+                    return (
+                      <button
+                        key={contact.id}
+                        onClick={() => setActiveContact(contact)}
+                        className={`w-full p-4 flex items-center gap-3 text-left transition-colors ${
+                          isSelected 
+                            ? "bg-emerald-50/60 dark:bg-emerald-950/20 border-l-4 border-emerald-600 dark:border-emerald-500" 
+                            : "hover:bg-zinc-100/50 dark:hover:bg-zinc-800/40"
+                        }`}
+                      >
+                        <div className="relative shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-sm shadow-xs">
+                            {contact.name.charAt(0)}
+                          </div>
+                          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-zinc-900" />
                         </div>
-                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-zinc-900" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-baseline mb-0.5">
-                          <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">{contact.name}</h4>
-                          <span className="text-[10px] text-zinc-400 shrink-0">{lastMsg?.time || "Active"}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-baseline mb-0.5">
+                            <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">{contact.name}</h4>
+                            <span className="text-[10px] text-zinc-400 shrink-0">{lastMsg?.time || "Active"}</span>
+                          </div>
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                            {lastMsg?.text || `Volunteer coordinator`}
+                          </p>
                         </div>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
-                          {lastMsg?.text || `Volunteer coordinator`}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
+                      </button>
+                    );
+                  })
+                )}
               </div>
             </div>
 

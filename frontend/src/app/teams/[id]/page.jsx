@@ -1,5 +1,11 @@
 "use client";
 import TeamDetail from "@/components/TeamDetail";
+import PageWrapper from "@/components/PageWrapper";
+
 export default function Page() {
-  return <TeamDetail />;
+  return (
+    <PageWrapper>
+      <TeamDetail />
+    </PageWrapper>
+  );
 }

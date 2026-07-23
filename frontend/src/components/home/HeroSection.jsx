@@ -1,14 +1,11 @@
 "use client";
-import React, { useContext, useEffect, useRef } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Appcontext } from "../../context/Appcontext";
 import { motion, useInView, useMotionValue, useTransform, animate } from "framer-motion";
 import { ArrowRight, Globe, Users, Clock, ShieldCheck, Sparkles } from "lucide-react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-gsap.registerPlugin(ScrollTrigger);
 
 function CounterNumber({ value, suffix = "" }) {
   const ref = useRef(null);
@@ -46,6 +43,8 @@ function CounterNumber({ value, suffix = "" }) {
 
 const HeroSection = () => {
   const { isLoggedIn } = useContext(Appcontext);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const router = useRouter();
   const heroRef = useRef(null);
   const imageRef = useRef(null);
@@ -100,10 +99,10 @@ const HeroSection = () => {
               {/* Actions */}
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 <Link
-                  href={isLoggedIn ? "/community-help" : "/signup"}
+                  href={mounted && isLoggedIn ? "/community-help" : "/signup"}
                   className="btn-saas btn-primary shadow-xs"
                 >
-                  <span>{isLoggedIn ? "Explore Requests" : "Start Volunteering"}</span>
+                  <span>{mounted && isLoggedIn ? "Explore Requests" : "Start Volunteering"}</span>
                   <ArrowRight size={15} />
                 </Link>
                 <Link

@@ -1,10 +1,11 @@
 "use client";
 import axios from "axios";
-import React, { useContext, useState, useMemo } from "react";
+import React, { useContext, useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Appcontext } from "../../context/Appcontext";
 import { motion, AnimatePresence } from "framer-motion";
+import Pagination from "../../components/Pagination";
 import { Search, Filter, Calendar, MapPin, Plus, CheckCircle2, Clock, Users } from "lucide-react";
 import { toast } from "react-toastify";
 import PageWrapper from "../../components/PageWrapper";
@@ -22,11 +23,22 @@ function Events() {
   const router = useRouter();
   const [isJoining, setIsJoining] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [mounted, setMounted] = useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
   const [filters, setFilters] = useState({
     category: "",
     location: "",
     showMyEvents: false,
   });
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 9; // 3 cols x 3 rows
+
+  // Reset page when filters or search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, searchQuery]);
 
   const handleJoinEvent = async (eventId: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -38,13 +50,20 @@ function Events() {
 
     try {
       setIsJoining(true);
-      const response = await axios.post(
-        `${backendUrl}/api/event/join/${eventId}`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      let response;
+      try {
+        response = await axios.post(
+          `${backendUrl}/api/event/join/${eventId}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } catch (err) {
+        response = await axios.post(
+          `/api/event/join/${eventId}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
 
       if (response.data.success) {
         toast.success("Joined event successfully!");
@@ -61,7 +80,7 @@ function Events() {
 
   const filteredEvents = useMemo(() => {
     if (!events) return [];
-    return events.filter((event: any) => {
+    const result = events.filter((event: any) => {
       const matchesSearch =
         event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         event.location?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -88,7 +107,15 @@ function Events() {
         matchesSearch && matchesCategory && matchesLocation && matchesMyEvents
       );
     });
+    return result;
   }, [events, searchQuery, filters, userData]);
+
+  // Pagination slice
+const totalPages = Math.ceil(filteredEvents.length / pageSize);
+  const paginatedEvents = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredEvents.slice(start, start + pageSize);
+  }, [filteredEvents, currentPage, pageSize]);
 
   return (
     <PageWrapper>
@@ -105,15 +132,15 @@ function Events() {
                 Explore local community events, sign up for initiatives, or launch your own event.
               </p>
             </div>
-            {isLoggedIn && (
-              <Link
-                href="/create-event"
-                className="btn-saas btn-primary !h-9 text-xs shrink-0"
-              >
-                <Plus size={14} />
-                <span>Host Initiative</span>
-              </Link>
-            )}
+            {mounted && isLoggedIn && (
+                <Link
+                  href="/create-event"
+                  className="btn-saas btn-primary !h-9 text-xs shrink-0"
+                >
+                  <Plus size={14} />
+                  <span>Host Initiative</span>
+                </Link>
+              )}
           </div>
         </div>
 
@@ -157,7 +184,7 @@ function Events() {
                 className="input-saas !h-9 text-xs w-32"
               />
 
-              {isLoggedIn && (
+              {mounted && isLoggedIn && (
                 <button
                   onClick={() => setFilters({ ...filters, showMyEvents: !filters.showMyEvents })}
                   className={`btn-saas !h-9 text-xs ${
@@ -198,35 +225,44 @@ function Events() {
             </div>
           ) : (
             /* Events Grid */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              <AnimatePresence>
-                {filteredEvents.map((event: any) => {
-                  const eventId = event._id || event.id;
-                  const userId = userData?._id || userData?.id;
-                  const isJoined = event.participants?.some(
-                    (p: any) => (typeof p === "object" ? (p._id || p.id) : p) === userId
-                  );
-                  const isFull = event.participants?.length >= event.maxParticipants;
-                  
-                  return (
-                    <motion.div
-                      key={eventId}
-                      layout
-                      initial={{ opacity: 0, scale: 0.98 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.98 }}
-                      className="card-saas flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-2 mb-3">
-                          <span className="px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40 font-semibold text-[11px] rounded-full">
-                            {event.category || "Community"}
-                          </span>
-                          {isJoined && (
-                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
-                              <CheckCircle2 size={13} /> Attending
+            <div>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentPage}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+                >
+                  {paginatedEvents.map((event: any) => {
+                    const eventId = event._id || event.id;
+                    const userId = userData?._id || userData?.id;
+                    const isJoined = event.participants?.some(
+                      (p: any) => (typeof p === "object" ? (p._id || p.id) : p) === userId
+                    );
+                    const isFull = event.participants?.length >= event.maxParticipants;
+
+                    return (
+                      <motion.div
+                        key={eventId}
+                        layout
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        className="card-saas flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-2 mb-3">
+                            <span className="px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40 font-semibold text-[11px] rounded-full">
+                              {event.category || "Community"}
                             </span>
-                          )}
+                            {isJoined && (
+                              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
+                                <CheckCircle2 size={13} /> Attending
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         <h3 className="text-base font-semibold text-zinc-900 dark:text-white mb-2 line-clamp-1">
@@ -240,7 +276,7 @@ function Events() {
                         <div className="space-y-2 py-2.5 border-y border-zinc-100 dark:border-zinc-800/60 text-xs text-zinc-600 dark:text-zinc-400 mb-4">
                           <div className="flex items-center gap-2">
                             <Calendar size={13} className="text-zinc-400 shrink-0" />
-                            <span className="truncate">{new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                            <span className="truncate">{new Date(event.date).toISOString().split('T')[0]}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Clock size={13} className="text-zinc-400 shrink-0" />
@@ -251,35 +287,31 @@ function Events() {
                             <span className="truncate">{event.location}</span>
                           </div>
                         </div>
-                      </div>
-
-                      <div className="flex gap-2">
-                        <Link
-                          href={`/events/${eventId}`}
-                          className="btn-saas btn-secondary !h-9 flex-1 text-center justify-center text-xs"
-                        >
-                          Details
-                        </Link>
-                        {!isJoined && (
-                          <button
-                            onClick={(e) => handleJoinEvent(eventId, e)}
-                            disabled={isJoining || isFull}
-                            className={`btn-saas !h-9 flex-1 text-center justify-center text-xs ${
-                              isFull 
-                                ? "btn-outline cursor-not-allowed opacity-50" 
-                                : "btn-primary"
-                            }`}
-                          >
-                            {isFull ? "Full" : "Join Now"}
-                          </button>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })}
+                        <div className="flex gap-2">
+                          <Link href={`/events/${eventId}`} className="btn-saas btn-secondary !h-9 flex-1 text-center justify-center text-xs">
+                            Details
+                          </Link>
+                          {!isJoined && (
+                            <button
+                              onClick={(e) => handleJoinEvent(eventId, e)}
+                              disabled={isJoining || isFull}
+                              className={`btn-saas !h-9 flex-1 text-center justify-center text-xs ${isFull ? "btn-outline cursor-not-allowed opacity-50" : "btn-primary"}`}
+                            >
+                              {isFull ? "Full" : "Join Now"}
+                            </button>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
               </AnimatePresence>
             </div>
-          )}
+                      )}
+
+  <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+
+
         </div>
       </div>
     </PageWrapper>

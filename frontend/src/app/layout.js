@@ -22,6 +22,7 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
@@ -30,7 +31,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className="min-h-full flex flex-col">
         <ClientLayout>{children}</ClientLayout>
-        {/* Scripts removed to prevent hydration issues */}
+        <Script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossOrigin="" strategy="beforeInteractive" />
       </body>
     </html>
   );

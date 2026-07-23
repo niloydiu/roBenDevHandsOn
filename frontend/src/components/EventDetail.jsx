@@ -185,7 +185,7 @@ function EventDetail() {
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-slate-400 dark:text-gray-400 uppercase tracking-widest">Date</p>
-                    <p className="font-bold text-slate-900 dark:text-white">{new Date(event.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    <p className="font-bold text-slate-900 dark:text-white"><DateDisplay date={event.date} /></p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">

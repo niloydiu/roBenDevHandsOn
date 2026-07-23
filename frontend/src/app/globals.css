@@ -86,9 +86,7 @@
     overscroll-behavior: contain;
   }
 
-  .lenis.lenis-stopped {
-    overflow: hidden;
-  }
+  
 
   body {
     background-color: var(--background);

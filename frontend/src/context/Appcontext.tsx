@@ -25,6 +25,8 @@ export interface User {
   teamsCreatedCount: number;
   helpRequestedCount: number;
   helpOfferedCount: number;
+  avatar?: string;
+  bio?: string;
   createdAt: string;
   eventsJoined?: Event[];
   teams?: Team[];
@@ -149,6 +151,7 @@ interface AppContextType {
   userHelpOffers: Record<string, boolean>;
   isLoggedIn: boolean;
   loadUserProfileData: () => Promise<void>;
+  updateUserProfile: (profileData: any) => Promise<{ success: boolean; message: string }>;
   fetchAllEvents: () => Promise<void>;
   fetchAllHelpRequests: () => Promise<void>;
   createHelpRequest: (newRequest: any) => Promise<{ success: boolean; message: string }>;
@@ -306,6 +309,29 @@ export const AppcontextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
+  const updateUserProfile = async (profileData: any) => {
+    try {
+      let response;
+      try {
+        response = await axios.put(`${backendUrl}/api/user/profile`, profileData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (err) {
+        response = await axios.put(`/api/user/profile`, profileData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+
+      if (response.data.success) {
+        setUserData(prev => ({ ...prev, ...response.data.user }));
+        return { success: true, message: response.data.message || "Profile updated!" };
+      }
+      return { success: false, message: response.data.message || "Update failed" };
+    } catch (error: any) {
+      return { success: false, message: error.response?.data?.message || "Failed to update profile" };
+    }
+  };
+
   const fetchAllEvents = async () => {
     try {
       setLoadingEvents(true);
@@ -374,14 +400,22 @@ export const AppcontextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const offerHelp = async (requestId: string) => {
     try {
-      const response = await axios.post(`${backendUrl}/api/help/offer/${requestId}`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      let response;
+      try {
+        response = await axios.post(`${backendUrl}/api/help/offer/${requestId}`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (err) {
+        response = await axios.post(`/api/help/offer/${requestId}`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+
       if (response.data.success) {
         const newUserHelpOffers = { ...userHelpOffers, [requestId]: response.data.hasOffered };
         setUserHelpOffers(newUserHelpOffers);
         await fetchAllHelpRequests();
-        await loadUserProfileData();
+        if (loadUserProfileData) await loadUserProfileData();
         return { success: true, message: response.data.message, hasOffered: response.data.hasOffered };
       }
       return { success: false, message: response.data.message || "Failed to process help offer" };
@@ -432,12 +466,20 @@ export const AppcontextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const joinEvent = async (eventId: string) => {
     try {
-      const response = await axios.post(`${backendUrl}/api/event/join/${eventId}`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      let response;
+      try {
+        response = await axios.post(`${backendUrl}/api/event/join/${eventId}`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (err) {
+        response = await axios.post(`/api/event/join/${eventId}`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+
       if (response.data.success) {
         await fetchAllEvents();
-        await loadUserProfileData();
+        if (loadUserProfileData) await loadUserProfileData();
         return { success: true, message: "Joined event successfully!" };
       }
       return { success: false, message: response.data.message };
@@ -695,7 +737,7 @@ export const AppcontextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     <Appcontext.Provider value={{
       backendUrl, token, setToken, userData, setUserData, events, loadingEvents, error,
       helpRequests, loadingHelpRequests, userHelpOffers, isLoggedIn,
-      loadUserProfileData, fetchAllEvents, fetchAllHelpRequests, createHelpRequest,
+      loadUserProfileData, updateUserProfile, fetchAllEvents, fetchAllHelpRequests, createHelpRequest,
       offerHelp, hasUserOfferedHelp, deleteHelpRequest, login, logout, joinEvent, leaveEvent,
       createEvent, updateEvent, deleteEvent,
       teams, loadingTeams, fetchAllTeams, createTeam, joinTeam, leaveTeam, deleteTeam,

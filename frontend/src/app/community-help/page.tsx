@@ -1,5 +1,6 @@
 "use client";
 import React, { useContext, useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { Appcontext } from "../../context/Appcontext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,9 +17,10 @@ import {
   Calendar,
   MessageSquare
 } from "lucide-react";
-import { toast } from "react-toastify";
+import DateDisplay from '../../components/DateDisplay';
 import PageWrapper from "../../components/PageWrapper";
 import MapComponent from "../../components/MapComponent";
+import Pagination from "../../components/Pagination";
 
 function CommunityHelp() {
   const router = useRouter();
@@ -58,6 +60,14 @@ function CommunityHelp() {
     showMyRequests: false,
   });
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, searchQuery]);
+
   useEffect(() => {
     fetchAllHelpRequests();
   }, []);
@@ -83,6 +93,12 @@ function CommunityHelp() {
       setFilteredRequests(filtered);
     }
   }, [helpRequests, userData, filters, isLoggedIn, searchQuery]);
+
+  const totalPages = Math.ceil(filteredRequests.length / pageSize);
+  const paginatedRequests = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredRequests.slice(start, start + pageSize);
+  }, [filteredRequests, currentPage, pageSize]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -112,15 +128,16 @@ function CommunityHelp() {
     const title = request.title;
     const description = request.description || "Volunteer opportunity";
     const location = request.location || "Community Location";
-    const now = new Date();
-    const start = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+
     
     const formatDate = (date: Date) => {
       return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
     };
     
     const reqId = request._id || request.id;
+    const now = new Date();
+    const start = new Date(request.startTime);
+    const end = new Date(request.endTime);
     const icsContent = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
@@ -297,104 +314,124 @@ function CommunityHelp() {
                   <div key={i} className="h-40 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/60 dark:border-zinc-800 animate-pulse" />
                 ))
               ) : filteredRequests.length > 0 ? (
-                filteredRequests.map((request) => {
-                  const reqId = request._id || request.id;
-                  const userId = userData?._id || userData?.id;
-                  const isOwner = isLoggedIn && userId && (request.createdBy?._id || request.createdBy?.id) === userId;
-                  const isOffered = hasUserOfferedHelp(reqId);
-
-                  return (
-                    <motion.div 
-                      layout
-                      initial={{ opacity: 0, y: 12 }}
+                <>
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={currentPage}
+                      initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      key={reqId}
-                      className="card-saas flex flex-col justify-between gap-3"
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
                     >
-                      <div>
-                        <div className="flex justify-between items-start mb-2 gap-2">
-                          <div className="flex flex-wrap gap-1.5 items-center">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                              request.urgencyLevel === 'urgent' 
-                                ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200/50 dark:border-rose-800/40' 
-                                : request.urgencyLevel === 'medium' 
-                                  ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200/50 dark:border-amber-800/40' 
-                                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200/50 dark:border-emerald-800/40'
-                            }`}>
-                              {request.urgencyLevel || "Normal"}
-                            </span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                              {request.category || "General"}
-                            </span>
+                      {paginatedRequests.map((request) => {
+                        const reqId = request._id || request.id;
+                        const userId = userData?._id || userData?.id;
+                        const isOwner = isLoggedIn && userId && (request.createdBy?._id || request.createdBy?.id) === userId;
+                        const isOffered = hasUserOfferedHelp(reqId);
+
+                        return (
+                          <motion.div 
+                            layout
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.98 }}
+                            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                            key={reqId}
+                            className="card-saas flex flex-col justify-between gap-3 mb-3"
+                          >
+                          <div>
+                            <div className="flex justify-between items-start mb-2 gap-2">
+                              <div className="flex flex-wrap gap-1.5 items-center">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                                  request.urgencyLevel === 'urgent' 
+                                    ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200/50 dark:border-rose-800/40' 
+                                    : request.urgencyLevel === 'medium' 
+                                      ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200/50 dark:border-amber-800/40' 
+                                      : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200/50 dark:border-emerald-800/40'
+                                }`}>
+                                  {request.urgencyLevel || "Normal"}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                                  {request.category || "General"}
+                                </span>
+                              </div>
+                              <div className="text-[11px] font-medium text-zinc-400 flex items-center gap-1 shrink-0">
+                                <Clock size={11} /> <DateDisplay date={request.createdAt} />
+                              </div>
+                            </div>
+
+                            <h3 className="text-base font-semibold text-zinc-900 dark:text-white mb-1">
+                              {request.title}
+                            </h3>
+                            <p className="text-zinc-600 dark:text-zinc-400 text-xs line-clamp-2 leading-relaxed mb-3">
+                              {request.description}
+                            </p>
                           </div>
-                          <div className="text-[11px] font-medium text-zinc-400 flex items-center gap-1 shrink-0">
-                            <Clock size={11} /> {new Date(request.createdAt).toLocaleDateString()}
+
+                          <div className="flex items-center justify-between pt-3 border-t border-zinc-100 dark:border-zinc-800/60 text-xs">
+                            <div className="flex items-center gap-3 text-zinc-500 truncate">
+                              <span className="flex items-center gap-1 truncate">
+                                <MapPin size={12} className="text-emerald-500 shrink-0" />
+                                <span className="truncate">{request.location}</span>
+                              </span>
+                              <span className="hidden sm:flex items-center gap-1 truncate">
+                                <User size={12} className="text-zinc-400 shrink-0" />
+                                <span className="truncate">{request.createdBy?.name || "Neighbor"}</span>
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              {isOwner ? (
+                                <button 
+                                  onClick={() => handleDelete(reqId)}
+                                  className="btn-saas text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 !h-8 !px-2.5"
+                                  title="Delete Request"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              ) : (
+                                <>
+                                  <button 
+                                    onClick={() => {
+                                      if (!isLoggedIn) {
+                                        toast.info("Please sign in to message volunteers");
+                                        router.push("/login");
+                                      } else {
+                                        router.push("/chat");
+                                      }
+                                    }}
+                                    className="btn-saas btn-secondary !h-8 !px-3 text-xs"
+                                  >
+                                    <MessageSquare size={13} />
+                                    <span>Chat</span>
+                                  </button>
+                                  <button 
+                                    onClick={() => handleOfferHelpClick(request)}
+                                    disabled={processingRequest === reqId}
+                                    className={`btn-saas !h-8 !px-3 text-xs ${
+                                      isOffered 
+                                        ? 'btn-outline border-emerald-500/40 text-emerald-600 dark:text-emerald-400' 
+                                        : 'btn-primary'
+                                    }`}
+                                  >
+                                    {isOffered ? "Help Offered ✓" : "Offer Support"}
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </div>
-                        </div>
-
-                        <h3 className="text-base font-semibold text-zinc-900 dark:text-white mb-1">
-                          {request.title}
-                        </h3>
-                        <p className="text-zinc-600 dark:text-zinc-400 text-xs line-clamp-2 leading-relaxed mb-3">
-                          {request.description}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-3 border-t border-zinc-100 dark:border-zinc-800/60 text-xs">
-                        <div className="flex items-center gap-3 text-zinc-500 truncate">
-                          <span className="flex items-center gap-1 truncate">
-                            <MapPin size={12} className="text-emerald-500 shrink-0" />
-                            <span className="truncate">{request.location}</span>
-                          </span>
-                          <span className="hidden sm:flex items-center gap-1 truncate">
-                            <User size={12} className="text-zinc-400 shrink-0" />
-                            <span className="truncate">{request.createdBy?.name || "Neighbor"}</span>
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          {isOwner ? (
-                            <button 
-                              onClick={() => handleDelete(reqId)}
-                              className="btn-saas text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 !h-8 !px-2.5"
-                              title="Delete Request"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          ) : (
-                            <>
-                              <button 
-                                onClick={() => {
-                                  if (!isLoggedIn) {
-                                    toast.info("Please sign in to message volunteers");
-                                    router.push("/login");
-                                  } else {
-                                    router.push("/chat");
-                                  }
-                                }}
-                                className="btn-saas btn-secondary !h-8 !px-3 text-xs"
-                              >
-                                <MessageSquare size={13} />
-                                <span>Chat</span>
-                              </button>
-                              <button 
-                                onClick={() => handleOfferHelpClick(request)}
-                                disabled={processingRequest === reqId}
-                                className={`btn-saas !h-8 !px-3 text-xs ${
-                                  isOffered 
-                                    ? 'btn-outline border-emerald-500/40 text-emerald-600 dark:text-emerald-400' 
-                                    : 'btn-primary'
-                                }`}
-                              >
-                                {isOffered ? "Help Offered ✓" : "Offer Support"}
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                        </motion.div>
+                      );
+                    })}
                     </motion.div>
-                  );
-                })
+                  </AnimatePresence>
+
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                </>
               ) : (
                 <div className="card-saas !p-12 text-center">
                   <Globe size={24} className="mx-auto mb-2 text-zinc-400" />
