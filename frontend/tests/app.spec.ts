@@ -86,4 +86,10 @@ test.describe("HandsOn Platform UI/UX & E2E Tests", () => {
     await page.click("button:has-text('GitHub')");
     await expect(page).toHaveURL("/");
   });
+
+  test("Chat page renders messaging interface", async ({ page }) => {
+    await page.goto("/chat");
+    await expect(page.locator("h1")).toContainText("Volunteer Messages");
+    await expect(page.getByPlaceholder(/Message/i)).toBeVisible();
+  });
 });
