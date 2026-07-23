@@ -126,7 +126,7 @@ function EventDetail() {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen pb-20 bg-slate-50/50"
+      className="min-h-screen pb-20 bg-slate-50/50 dark:bg-slate-900/80"
     >
       {/* Hero Section */}
       <div className="relative h-[45vh] lg:h-[60vh] overflow-hidden">
@@ -171,15 +171,15 @@ function EventDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            <div className="bg-white rounded-[40px] p-8 lg:p-12 shadow-sm border border-slate-100">
+            <div className="bg-white dark:bg-zinc-900 rounded-[40px] p-8 lg:p-12 shadow-sm border border-slate-100 dark:border-zinc-700">
               <div className="flex flex-wrap gap-6 mb-12 py-8 border-y border-slate-50">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
                     <HiOutlineCalendar size={24} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</p>
-                    <p className="font-bold text-slate-900">{new Date(event.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-gray-400 uppercase tracking-widest">Date</p>
+                    <p className="font-bold text-slate-900 dark:text-white">{new Date(event.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -187,8 +187,8 @@ function EventDetail() {
                     <HiOutlineClock size={24} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Time</p>
-                    <p className="font-bold text-slate-900">{event.startTime} - {event.endTime}</p>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-gray-400 uppercase tracking-widest">Time</p>
+                    <p className="font-bold text-slate-900 dark:text-white">{event.startTime} - {event.endTime}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -197,25 +197,25 @@ function EventDetail() {
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</p>
-                    <p className="font-bold text-slate-900">{event.location}</p>
+                    <p className="font-bold text-slate-900 dark:text-white">{event.location}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="prose prose-slate max-w-none">
-                <h3 className="text-2xl font-black text-slate-900 mb-6">About this event</h3>
+              <div className="prose prose-slate dark:prose-invert max-w-none">
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-6">About this event</h3>
                 <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-wrap">
                   {event.description}
                 </p>
               </div>
 
               {event.requirements && (
-                <div className="mt-12 p-8 bg-slate-50 rounded-[32px] border border-slate-100">
-                  <h4 className="flex items-center gap-2 text-lg font-bold text-slate-900 mb-4">
+                <div className="mt-12 p-8 bg-slate-50 dark:bg-zinc-900 rounded-[32px] border border-slate-100 dark:border-zinc-700">
+                  <h4 className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white mb-4">
                     <HiOutlineShieldCheck className="text-blue-600" size={24} />
                     Requirements
                   </h4>
-                  <p className="text-slate-600 font-medium">{event.requirements}</p>
+                  <p className="text-slate-600 dark:text-gray-300 font-medium">{event.requirements}</p>
                 </div>
               )}
             </div>
@@ -254,20 +254,20 @@ function EventDetail() {
 
           {/* Sidebar */}
           <div className="space-y-8">
-            <div className="bg-white rounded-[40px] p-8 shadow-sm border border-slate-100 sticky top-32">
+            <div className="bg-white dark:bg-zinc-900 rounded-[40px] p-8 shadow-sm border border-slate-100 dark:border-zinc-700 sticky top-32">
               <div className="mb-8">
                 <div className="flex justify-between items-end mb-4">
-                  <h3 className="text-lg font-black text-slate-900">Participation</h3>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">Participation</h3>
                   <span className="text-blue-600 font-black">{participantsCount} / {maxParticipants}</span>
                 </div>
-                <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-3 bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${progress}%` }}
                     className={`h-full rounded-full ${progress >= 100 ? 'bg-red-500' : 'bg-blue-600'}`}
                   />
                 </div>
-                <p className="text-xs text-slate-400 mt-4 font-bold uppercase tracking-widest">
+                <p className="text-xs text-slate-400 dark:text-gray-400 mt-4 font-bold uppercase tracking-widest">
                   {maxParticipants - participantsCount} slots remaining
                 </p>
               </div>
@@ -312,15 +312,15 @@ function EventDetail() {
                 </div>
               )}
 
-              <div className="mt-10 pt-10 border-t border-slate-50">
+              <div className="mt-10 pt-10 border-t border-slate-50 dark:border-zinc-700">
                 <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6">Organizer</h4>
-                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-3xl">
+                <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-zinc-800 rounded-3xl">
                   <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/20">
                     {(event.organizer || (event.createdBy?.name) || "C").charAt(0)}
                   </div>
                   <div>
-                    <p className="font-bold text-slate-900">{event.organizer || event.createdBy?.name || "Community Organizer"}</p>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Verified Partner</p>
+                    <p className="font-bold text-slate-900 dark:text-white">{event.organizer || event.createdBy?.name || "Community Organizer"}</p>
+                    <p className="text-xs text-slate-400 dark:text-gray-400 font-bold uppercase tracking-widest">Verified Partner</p>
                   </div>
                 </div>
               </div>
