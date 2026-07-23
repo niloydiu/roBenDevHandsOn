@@ -32,15 +32,26 @@ function TeamDetail() {
     const fetchTeamDetail = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${backendUrl}/api/team/${id}`);
-        setTeam(response.data);
+        let response;
+        try {
+          response = await axios.get(`${backendUrl}/api/team/${id}`);
+        } catch (e) {
+          response = await axios.get(`/api/team/${id}`);
+        }
+        setTeam(response?.data?.team || response?.data);
       } catch (err) {
-        toast.error("Failed to load team details");
+        console.error("Error fetching team detail:", err);
+        try {
+          const localRes = await axios.get(`/api/team/${id}`);
+          setTeam(localRes.data);
+        } catch (finalErr) {
+          toast.error("Failed to load team details");
+        }
       } finally {
         setLoading(false);
       }
     };
-    if (id && backendUrl) fetchTeamDetail();
+    if (id) fetchTeamDetail();
   }, [id, backendUrl]);
 
   const isTeamCreator = () => {

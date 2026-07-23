@@ -28,6 +28,13 @@ test.describe("HandsOn Platform UI/UX & E2E Tests", () => {
     expect(cardCount).toBeGreaterThan(0);
   });
 
+  test("Event Detail page loads event details cleanly", async ({ page }) => {
+    await page.goto("/events/ev-1");
+    await expect(page.locator("h1")).toContainText("Dhanmondi Lake Clean-Up");
+    await expect(page.getByText("Requirements")).toBeVisible();
+    await expect(page.getByText("Location")).toBeVisible();
+  });
+
   test("Community Help page renders mutual aid requests", async ({ page }) => {
     await page.goto("/community-help");
 
@@ -44,6 +51,12 @@ test.describe("HandsOn Platform UI/UX & E2E Tests", () => {
     await expect(page.locator("h1")).toContainText("Volunteer Teams");
     await expect(page.locator("button:has-text('Discover')")).toBeVisible();
     await expect(page.locator("button:has-text('Rankings')")).toBeVisible();
+  });
+
+  test("Team Detail page loads team details cleanly", async ({ page }) => {
+    await page.goto("/teams/t-1");
+    await expect(page.locator("h1")).toContainText("Green Earth Action Corps");
+    await expect(page.getByText("Hours Contributed")).toBeVisible();
   });
 
   test("Support page renders donation form and preset options", async ({ page }) => {
