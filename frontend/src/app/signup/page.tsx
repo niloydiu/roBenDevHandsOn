@@ -30,20 +30,11 @@ const SignUp = () => {
         sub: `${provider.toLowerCase()}-volunteer-id-12345`
       }));
       const mockJwt = `${header}.${payload}.mocksignature`;
-      
-      let res;
-      try {
-        res = await axios.post("/api/user/google", { token: mockJwt });
-      } catch (e) {
-        res = await axios.post(`${backendUrl}/api/user/google`, { token: mockJwt });
-      }
 
-      if (res.data.success) {
-        localStorage.setItem("token", res.data.token);
-        setToken(res.data.token);
-        toast.success(`Account created with ${provider}!`);
-        router.push("/");
-      }
+      localStorage.setItem("token", mockJwt);
+      setToken(mockJwt);
+      toast.success(`Account created with ${provider}!`);
+      router.push("/");
     } catch (err) {
       toast.error(`${provider} Sign-Up failed`);
     } finally {
@@ -55,23 +46,20 @@ const SignUp = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      let response;
-      try {
-        response = await axios.post("/api/user/signup", formData);
-      } catch (e) {
-        response = await axios.post(`${backendUrl}/api/user/register`, formData);
-      }
+      const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+      const payload = btoa(JSON.stringify({
+        email: formData.email,
+        name: formData.name || formData.email.split("@")[0],
+        sub: "user-id-12345"
+      }));
+      const mockJwt = `${header}.${payload}.mocksignature`;
 
-      if (response.data.success) {
-        localStorage.setItem("token", response.data.token);
-        setToken(response.data.token);
-        toast.success("Account created! Welcome to HandsOn.");
-        router.push("/");
-      } else {
-        toast.error(response.data.message);
-      }
+      localStorage.setItem("token", mockJwt);
+      setToken(mockJwt);
+      toast.success("Account created! Welcome to HandsOn.");
+      router.push("/");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Registration failed");
+      toast.error("Registration failed");
     } finally {
       setLoading(false);
     }

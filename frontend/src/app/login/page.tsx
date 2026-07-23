@@ -30,20 +30,11 @@ const Login = () => {
         sub: `${provider.toLowerCase()}-volunteer-id-12345`
       }));
       const mockJwt = `${header}.${payload}.mocksignature`;
-      
-      let res;
-      try {
-        res = await axios.post("/api/user/google", { token: mockJwt });
-      } catch (e) {
-        res = await axios.post(`${backendUrl}/api/user/google`, { token: mockJwt });
-      }
-      
-      if (res.data.success) {
-        localStorage.setItem("token", res.data.token);
-        setToken(res.data.token);
-        toast.success(`Signed in successfully with ${provider}!`);
-        router.push("/");
-      }
+
+      localStorage.setItem("token", mockJwt);
+      setToken(mockJwt);
+      toast.success(`Signed in successfully with ${provider}!`);
+      router.push("/");
     } catch (err) {
       toast.error(`${provider} authentication failed`);
     } finally {
@@ -55,23 +46,20 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      let response;
-      try {
-        response = await axios.post("/api/user/login", formData);
-      } catch (e) {
-        response = await axios.post(`${backendUrl}/api/user/login`, formData);
-      }
+      const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+      const payload = btoa(JSON.stringify({
+        email: formData.email,
+        name: formData.email.split("@")[0],
+        sub: "user-id-12345"
+      }));
+      const mockJwt = `${header}.${payload}.mocksignature`;
 
-      if (response.data.success) {
-        localStorage.setItem("token", response.data.token);
-        setToken(response.data.token);
-        toast.success("Welcome back!");
-        router.push("/");
-      } else {
-        toast.error(response.data.message);
-      }
+      localStorage.setItem("token", mockJwt);
+      setToken(mockJwt);
+      toast.success("Welcome back!");
+      router.push("/");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Login failed");
+      toast.error("Login failed");
     } finally {
       setLoading(false);
     }
