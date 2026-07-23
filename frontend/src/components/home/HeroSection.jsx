@@ -50,26 +50,7 @@ const HeroSection = () => {
   const heroRef = useRef(null);
   const imageRef = useRef(null);
 
-  useEffect(() => {
-    if (!heroRef.current) return;
-    
-    const ctx = gsap.context(() => {
-      if (imageRef.current) {
-        gsap.to(imageRef.current, {
-          yPercent: 12,
-          ease: "none",
-          scrollTrigger: {
-            trigger: heroRef.current,
-            start: "top top",
-            end: "bottom top",
-            scrub: true
-          }
-        });
-      }
-    }, heroRef);
-
-    return () => ctx.revert();
-  }, []);
+  // Clean native layout rendering
 
   const navigateToHelpRequests = () => {
     router.push("/community-help");

@@ -55,46 +55,6 @@ export default function Home() {
   const eventsRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      if (statsRef.current) {
-        gsap.fromTo(
-          statsRef.current,
-          { opacity: 0, y: 30 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.8,
-            ease: "power2.out",
-            scrollTrigger: {
-              trigger: statsRef.current,
-              start: "top 85%",
-            }
-          }
-        );
-      }
-
-      if (ctaRef.current) {
-        gsap.fromTo(
-          ctaRef.current,
-          { opacity: 0, scale: 0.98 },
-          {
-            opacity: 1,
-            scale: 1,
-            duration: 0.7,
-            ease: "power2.out",
-            scrollTrigger: {
-              trigger: ctaRef.current,
-              start: "top 85%",
-            }
-          }
-        );
-      }
-    });
-
-    return () => ctx.revert();
-  }, []);
-
   return (
     <PageWrapper>
       <div className="space-y-0 text-zinc-900 dark:text-zinc-100">
@@ -147,7 +107,7 @@ export default function Home() {
         <section className="py-14 bg-zinc-50/50 dark:bg-zinc-900/20 border-b border-zinc-200/70 dark:border-zinc-800/80">
           <div className="container mx-auto px-4 md:px-6 lg:px-8 max-w-7xl">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
-              <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
+              <div className="lg:col-span-5 space-y-4">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-800/40 text-xs font-medium">
                   <Heart size={13} />
                   <span>Direct Mutual Aid</span>
